@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Helvetica Neue',Arial,'Hiragino Kaku Gothic ProN',sans-serif;background:#f0f2f5;color:#222;font-size:14px;}
+nav{background:#1a1a2e;color:#fff;display:flex;align-items:center;gap:0;height:48px;padding:0 16px;position:sticky;top:0;z-index:100;}
+nav .logo{font-size:16px;font-weight:700;color:#fff;margin-right:24px;white-space:nowrap;}
+nav .tab{padding:0 16px;height:48px;display:flex;align-items:center;cursor:pointer;border-bottom:3px solid transparent;font-size:13px;color:#aaa;transition:color .2s;}
+nav .tab:hover{color:#fff;}
+nav .tab.on{color:#fff;border-bottom-color:#4a9eff;}
+.pane{display:none;padding:16px;max-width:1200px;margin:0 auto;}
+.pane.on{display:block;}
+.card{background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:16px;margin-bottom:16px;}
+.card-hd{font-size:13px;font-weight:600;color:#555;margin-bottom:12px;}
+.row{display:flex;gap:12px;flex-wrap:wrap;}
+.kpi{flex:1;min-width:140px;background:#f8f9fb;border-radius:6px;padding:12px 14px;}
+.kpi .kl{font-size:11px;color:#888;margin-bottom:4px;}
+.kpi .kv{font-size:22px;font-weight:700;line-height:1.2;}
+.kpi .kd{font-size:11px;margin-top:4px;}
+.up{color:#1D9E75;}.dn{color:#e05;}  .neu{color:#888;}
+.svc-row{display:flex;gap:8px;margin-bottom:12px;}
+.svc-btn{padding:4px 14px;border-radius:20px;border:1.5px solid #ddd;background:#fff;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;}
+.svc-btn.on{color:#fff;border-color:transparent;}
+.hdrow{display:flex;align-items:baseline;gap:8px;margin-bottom:2px;}
+.hd{font-size:16px;font-weight:700;}
+.nt{font-size:11px;color:#888;}
+.sub{font-size:12px;color:#888;margin-bottom:12px;}
+.nav-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.nav-btn{padding:4px 12px;border-radius:4px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:12px;}
+.nav-btn:hover{background:#f0f0f0;}
+.dp-input{border:1px solid #ddd;border-radius:4px;padding:4px 8px;font-size:12px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{background:#f5f6f8;padding:6px 8px;text-align:right;font-weight:600;color:#555;border-bottom:1px solid #e8e8e8;}
+th:first-child{text-align:left;}
+td{padding:6px 8px;text-align:right;border-bottom:1px solid #f0f0f0;}
+td:first-child{text-align:left;font-weight:500;}
+tr:last-child td{border-bottom:none;}
+.wbar-row{margin-bottom:8px;}
+.wbar-label{font-size:11px;color:#666;margin-bottom:3px;}
+.wbar-wrap{display:flex;gap:4px;align-items:center;}
+.wbar-bg{flex:1;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;}
+.wbar-fill{height:100%;border-radius:4px;transition:width .4s;}
+.wbar-val{font-size:11px;color:#555;min-width:50px;text-align:right;}
+.per-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.per-btn{padding:4px 12px;border-radius:4px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:12px;}
+.per-btn.on{background:#1a1a2e;color:#fff;border-color:#1a1a2e;}
+.custom-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+.srt-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;}
+.srt-btn{padding:3px 10px;border-radius:4px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:11px;}
+.srt-btn.on{background:#1a1a2e;color:#fff;border-color:#1a1a2e;}
+.pagi{display:flex;gap:6px;align-items:center;margin-top:8px;font-size:12px;color:#666;}
+.pagi button{padding:3px 10px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;}
+canvas{max-width:100%;}
+.su{font-size:11px;font-weight:400;color:#888;}
+.tbl-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.tbl-title{font-size:13px;font-weight:600;color:#555;}
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">Dashboard</div>
+  <div class="tab on" onclick="go('dy')">日次</div>
+  <div class="tab" onclick="go('mo')">月次</div>
+  <div class="tab" onclick="go('it')">アイテム</div>
+  <div class="tab" onclick="go('pt')">ポイント</div>
+</nav>
+
+<!-- Daily pane -->
+<div id="pane-dy" class="pane on">
+  <div class="card">
+    <div id="dy-srow" class="svc-row"></div>
+    <div class="nav-row">
+      <button class="nav-btn" onclick="shD(-1)">◀</button>
+      <input type="date" id="dy-dp" class="dp-input" onchange="pickD(this.value)">
+      <button class="nav-btn" onclick="shD(1)">▶</button>
+      <span id="dy-nt" class="nt"></span>
+    </div>
+    <div class="hdrow"><span id="dy-h" class="hd"></span></div>
+    <div id="dy-s" class="sub"></div>
+    <div class="row">
+      <div class="kpi"><div class="kl">購入率</div><div class="kv" id="dk0">—</div><div class="kd" id="dk0d"></div></div>
+      <div class="kpi"><div class="kl">売上</div><div class="kv" id="dk1">—</div><div class="kd" id="dk1d"></div></div>
+      <div class="kpi"><div class="kl">新規登録</div><div class="kv" id="dk2">—</div><div class="kd" id="dk2d"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd">週次トレンド（直近7日平均 vs 前週7日平均）</div>
+    <div class="wbar-row">
+      <div class="wbar-label">購入率</div>
+      <div class="wbar-wrap"><div class="wbar-bg"><div class="wbar-fill" id="dw0c"></div></div><div class="wbar-val" id="dwv0c">—</div></div>
+      <div class="wbar-wrap"><div class="wbar-bg"><div class="wbar-fill" id="dw0p" style="opacity:.4"></div></div><div class="wbar-val" id="dwv0p">—</div></div>
+      <div class="kd" id="dk0w"></div>
+    </div>
+    <div class="wbar-row">
+      <div class="wbar-label">売上</div>
+      <div class="wbar-wrap"><div class="wbar-bg"><div class="wbar-fill" id="dw1c"></div></div><div class="wbar-val" id="dwv1c">—</div></div>
+      <div class="wbar-wrap"><div class="wbar-bg"><div class="wbar-fill" id="dw1p" style="opacity:.4"></div></div><div class="wbar-val" id="dwv1p">—</div></div>
+      <div class="kd" id="dk1w"></div>
+    </div>
+    <div class="wbar-row">
+      <div class="wbar-label">新規登録</div>
+      <div class="wbar-wrap"><div class="wbar-bg"><div class="wbar-fill" id="dw2c"></div></div><div class="wbar-val" id="dwv2c">—</div></div>
+      <div class="wbar-wrap"><div class="wbar-bg"><div class="wbar-fill" id="dw2p" style="opacity:.4"></div></div><div class="wbar-val" id="dwv2p">—</div></div>
+      <div class="kd" id="dk2w"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div id="dy-tt" class="card-hd"></div>
+    <table>
+      <thead><tr><th>指標</th><th>日次</th><th>月次累計</th></tr></thead>
+      <tbody>
+        <tr><td>新規登録(email)</td><td id="dt0">—</td><td id="dc0">—</td></tr>
+        <tr><td>新規登録(LINE)</td><td id="dt1">—</td><td id="dc1">—</td></tr>
+        <tr><td>新規登録(合計)</td><td id="dt2">—</td><td id="dc2">—</td></tr>
+        <tr><td>アプリ起動</td><td id="dt3">—</td><td id="dc3">—</td></tr>
+        <tr><td>売上</td><td id="dt4">—</td><td id="dc4">—</td></tr>
+        <tr><td>購入率</td><td id="dt5">—</td><td id="dc5">—</td></tr>
+        <tr><td>購入者数</td><td id="dt6">—</td><td id="dc6">—</td></tr>
+        <tr><td>ARPU</td><td id="dt7">—</td><td id="dc7">—</td></tr>
+        <tr><td>PT付与</td><td id="dt8">—</td><td id="dc8">—</td></tr>
+        <tr><td>PT消費</td><td id="dt9">—</td><td id="dc9">—</td></tr>
+        <tr><td>PT失効</td><td id="dt10">—</td><td id="dc10">—</td></tr>
+        <tr><td>PT消費率</td><td id="dt11">—</td><td id="dc11">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="tbl-hd"><div class="tbl-title">アイテム別売上</div></div>
+    <table>
+      <thead><tr><th>アイテム</th><th>売上</th><th>件数</th><th>単価</th></tr></thead>
+      <tbody id="dy-ib"><tr><td colspan="4" style="text-align:center;color:#888;padding:1rem">データなし</td></tr></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="tbl-hd"><div class="tbl-title">交換所別消費</div></div>
+    <table>
+      <thead><tr><th>交換所</th><th>消費PT</th><th>件数</th><th>単価</th></tr></thead>
+      <tbody id="dy-eb"><tr><td colspan="4" style="text-align:center;color:#888;padding:1rem">データなし</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Monthly pane -->
+<div id="pane-mo" class="pane">
+  <div class="card">
+    <div id="mo-srow" class="svc-row"></div>
+    <div class="nav-row">
+      <button class="nav-btn" onclick="shM(-1)">◀</button>
+      <span id="mo-dd" style="font-size:13px;font-weight:600;"></span>
+      <button class="nav-btn" onclick="shM(1)">▶</button>
+      <span id="mo-nt" class="nt"></span>
+    </div>
+    <div class="hdrow"><span id="mo-h" class="hd"></span></div>
+    <div id="mo-s" class="sub"></div>
+    <div class="row">
+      <div class="kpi"><div class="kl">購入率</div><div class="kv" id="mk0">—</div><div class="kd" id="mk0d"></div></div>
+      <div class="kpi"><div class="kl">売上</div><div class="kv" id="mk1">—</div><div class="kd" id="mk1d"></div></div>
+      <div class="kpi"><div class="kl">新規登録</div><div class="kv" id="mk2">—</div><div class="kd" id="mk2d"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd">月次比較（当月 vs 前月）</div>
+    <div class="wbar-row">
+      <div class="wbar-label">購入率</div>
+      <div class="wbar-wrap"><div class="wbar-bg"><div class="wbar-fill" id="mw0c"></div></div><div class="wbar-val" id="mwv0c">—</div></div>
+      <div class="wbar-wrap"><div class="wbar-bg"><div class="wbar-fill" id="mw0p" style="opacity:.4"></div></div><div class="wbar-val" id="mwv0p">—</div></div>
+    </div>
+    <div class="wbar-row">
+      <div class="wbar-label">売上</div>
+      <div class="wbar-wrap"><div class="wbar-bg"><div class="wbar-fill" id="mw1c"></div></div><div class="wbar-val" id="mwv1c">—</div></div>
+      <div class="wbar-wrap"><div class="wbar-bg"><div class="wbar-fill" id="mw1p" style="opacity:.4"></div></div><div class="wbar-val" id="mwv1p">—</div></div>
+    </div>
+    <div class="wbar-row">
+      <div class="wbar-label">新規登録</div>
+      <div class="wbar-wrap"><div class="wbar-bg"><div class="wbar-fill" id="mw2c"></div></div><div class="wbar-val" id="mwv2c">—</div></div>
+      <div class="wbar-wrap"><div class="wbar-bg"><div class="wbar-fill" id="mw2p" style="opacity:.4"></div></div><div class="wbar-val" id="mwv2p">—</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div id="mo-tt" class="card-hd"></div>
+    <table>
+      <thead><tr><th>指標</th><th>当月</th><th>前月</th></tr></thead>
+      <tbody>
+        <tr><td>新規登録(email)</td><td id="mt0">—</td><td id="mp0">—</td></tr>
+        <tr><td>新規登録(LINE)</td><td id="mt1">—</td><td id="mp1">—</td></tr>
+        <tr><td>新規登録(合計)</td><td id="mt2">—</td><td id="mp2">—</td></tr>
+        <tr><td>アプリ起動</td><td id="mt3">—</td><td id="mp3">—</td></tr>
+        <tr><td>売上</td><td id="mt4">—</td><td id="mp4">—</td></tr>
+        <tr><td>購入率</td><td id="mt5">—</td><td id="mp5">—</td></tr>
+        <tr><td>購入者数</td><td id="mt6">—</td><td id="mp6">—</td></tr>
+        <tr><td>ARPU</td><td id="mt7">—</td><td id="mp7">—</td></tr>
+        <tr><td>PT付与</td><td id="mt8">—</td><td id="mp8">—</td></tr>
+        <tr><td>PT消費</td><td id="mt9">—</td><td id="mp9">—</td></tr>
+        <tr><td>PT失効</td><td id="mt10">—</td><td id="mp10">—</td></tr>
+        <tr><td>PT消費率</td><td id="mt11">—</td><td id="mp11">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="tbl-hd"><div class="tbl-title">アイテム別売上</div></div>
+    <table>
+      <thead><tr><th>アイテム</th><th>売上</th><th>件数</th><th>単価</th></tr></thead>
+      <tbody id="mo-ib"><tr><td colspan="4" style="text-align:center;color:#888;padding:1rem">データなし</td></tr></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="tbl-hd"><div class="tbl-title">交換所別消費</div></div>
+    <table>
+      <thead><tr><th>交換所</th><th>消費PT</th><th>件数</th><th>単価</th></tr></thead>
+      <tbody id="mo-eb"><tr><td colspan="4" style="text-align:center;color:#888;padding:1rem">データなし</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Item pane -->
+<div id="pane-it" class="pane">
+  <div class="card">
+    <div id="it-srow" class="svc-row"></div>
+    <div class="per-row">
+      <button class="per-btn on" onclick="setP('i','prev')">前日</button>
+      <button class="per-btn" onclick="setP('i','week')">直近1週間</button>
+      <button class="per-btn" onclick="setP('i','month')">直近1カ月</button>
+      <button class="per-btn" onclick="setP('i','custom')">カスタム</button>
+    </div>
+    <div class="custom-row" id="it-custom" style="display:none">
+      <input type="date" id="it-from" class="dp-input">
+      <span>〜</span>
+      <input type="date" id="it-to" class="dp-input">
+      <button class="nav-btn" onclick="applyP('i')">適用</button>
+    </div>
+    <div class="hdrow"><span id="it-h" class="hd"></span></div>
+    <div id="it-s" class="sub"></div>
+    <div class="row">
+      <div class="kpi"><div class="kl">売上合計</div><div class="kv" id="is0">—</div></div>
+      <div class="kpi"><div class="kl">購入件数</div><div class="kv" id="is1">—</div></div>
+      <div class="kpi"><div class="kl">アイテム種数</div><div class="kv" id="is2">—</div></div>
+      <div class="kpi"><div class="kl">平均単価</div><div class="kv" id="is3">—</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="srt-row">
+      <span style="font-size:12px;color:#666">並べ替え：</span>
+      <button class="srt-btn on" onclick="setSrt('i','sales')">売上</button>
+      <button class="srt-btn" onclick="setSrt('i','count')">件数</button>
+      <button class="srt-btn" onclick="setSrt('i','price')">単価</button>
+    </div>
+    <table>
+      <thead><tr><th>アイテム名</th><th>売上</th><th>件数</th><th>単価</th><th>構成比</th><th>累積</th></tr></thead>
+      <tbody id="it-tb"><tr><td colspan="6" style="text-align:center;color:#888;padding:2rem;font-size:13px">このタブのデータは現在準備中です</td></tr></tbody>
+    </table>
+    <div class="pagi"><button onclick="pg('i',-1)">◀</button><span id="it-pi">0 件</span><button onclick="pg('i',1)">▶</button></div>
+  </div>
+</div>
+
+<!-- Point pane -->
+<div id="pane-pt" class="pane">
+  <div class="card">
+    <div id="pt-srow" class="svc-row"></div>
+    <div class="per-row">
+      <button class="per-btn on" onclick="setP('p','prev')">前日</button>
+      <button class="per-btn" onclick="setP('p','week')">直近1週間</button>
+      <button class="per-btn" onclick="setP('p','month')">直近1カ月</button>
+      <button class="per-btn" onclick="setP('p','custom')">カスタム</button>
+    </div>
+    <div class="custom-row" id="pt-custom" style="display:none">
+      <input type="date" id="pt-from" class="dp-input">
+      <span>〜</span>
+      <input type="date" id="pt-to" class="dp-input">
+      <button class="nav-btn" onclick="applyP('p')">適用</button>
+    </div>
+    <div class="hdrow"><span id="pt-h" class="hd"></span></div>
+    <div id="pt-s" class="sub"></div>
+    <div class="row">
+      <div class="kpi"><div class="kl">消費PT合計</div><div class="kv" id="ps0">—</div></div>
+      <div class="kpi"><div class="kl">交換件数</div><div class="kv" id="ps1">—</div></div>
+      <div class="kpi"><div class="kl">交換所種数</div><div class="kv" id="ps2">—</div></div>
+      <div class="kpi"><div class="kl">平均消費PT</div><div class="kv" id="ps3">—</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="srt-row">
+      <span style="font-size:12px;color:#666">並べ替え：</span>
+      <button class="srt-btn on" onclick="setSrt('p','consumed')">消費PT</button>
+      <button class="srt-btn" onclick="setSrt('p','count')">件数</button>
+      <button class="srt-btn" onclick="setSrt('p','pt')">単価</button>
+    </div>
+    <table>
+      <thead><tr><th>交換所名</th><th>消費PT</th><th>件数</th><th>単価PT</th><th>構成比</th><th>累積</th></tr></thead>
+      <tbody id="pt-tb"><tr><td colspan="6" style="text-align:center;color:#888;padding:2rem;font-size:13px">このタブのデータは現在準備中です</td></tr></tbody>
+    </table>
+    <div class="pagi"><button onclick="pg('p',-1)">◀</button><span id="pt-pi">0 件</span><button onclick="pg('p',1)">▶</button></div>
+  </div>
+</div>
+
+<script>
+// ======= CSV LOADING =======
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1qCt6QTT-TZq9nkCSru_1_HPYTtaco1FAmLejl37jm3A/export?format=csv&gid=88677775';
+const CLRS={bone:'#378ADD',gate:'#1D9E75',voyage:'#7F77DD'};
+const NAMES={bone:'bone',gate:'Gate',voyage:'Voyage'};
+
+let sheetData = {};
+let LAT = new Date();
+let MLAT = {y: LAT.getFullYear(), m: LAT.getMonth()};
+let dSvc='bone', mSvc='bone', iSvc='bone', pSvc='bone';
+let dDate = new Date(LAT), mYM = {...MLAT};
+let iPer='month', pPer='month';
+let iSrt='sales', iDr={sales:'desc',count:'desc',price:'desc'};
+let pSrt='consumed', pDr={consumed:'desc',count:'desc',pt:'desc'};
+let iData=[], pData=[];
+const charts={};
+const detSt={};
+
+function parseNum(s) {
+  if (!s) return 0;
+  return parseInt(s.toString().replace(/[,\s]/g, '')) || 0;
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') { inQuotes = !inQuotes; }
+    else if (line[i] === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+    else { current += line[i]; }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+async function loadData() {
+  document.body.style.opacity = '0.5';
+  try {
+    const res = await fetch(SHEET_URL);
+    const text = await res.text();
+    const lines = text.split('\n');
+    const dataLines = lines.slice(8);
+
+    sheetData = {};
+    let lat = null;
+
+    for (const line of dataLines) {
+      if (!line.trim()) continue;
+      const cols = parseCSVLine(line);
+      const dateStr = cols[0];
+      if (!dateStr) continue;
+      const match = dateStr.match(/(\d+)月(\d+)日/);
+      if (!match) continue;
+
+      const monthIdx = parseInt(match[1]) - 1;
+      const day = parseInt(match[2]);
+      const now = new Date();
+      let year = now.getFullYear();
+      if (monthIdx > now.getMonth() + 2) year--;
+
+      const dateKey = `${year}-${String(monthIdx+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const dateObj = new Date(year, monthIdx, day);
+
+      const exch800 = parseNum(cols[14]);
+      const exch50 = parseNum(cols[16]);
+
+      sheetData[dateKey] = {
+        app: parseNum(cols[5]),
+        sal: parseNum(cols[6]),
+        pay: parseNum(cols[10]),
+        em:  parseNum(cols[4]),
+        ln:  0,
+        ptG: parseNum(cols[12]),
+        ptU: exch800 * 800 + exch50 * 50,
+        ptE: 0,
+      };
+
+      if (!lat || dateObj > lat) lat = dateObj;
+    }
+
+    if (lat) {
+      LAT = lat;
+      MLAT = {y: lat.getFullYear(), m: lat.getMonth()};
+      dDate = new Date(lat);
+      mYM = {...MLAT};
+    }
+  } catch(e) {
+    console.error('CSV load error:', e);
+    alert('データの読み込みに失敗しました。スプレッドシートの共有設定を確認してください。');
+  } finally {
+    document.body.style.opacity = '1';
+  }
+}
+
+function getD(d) {
+  return sheetData[dK(d)] || null;
+}
+
+function getM(y, m) {
+  const prefix = `${y}-${String(m+1).padStart(2,'0')}-`;
+  const rows = Object.entries(sheetData)
+    .filter(([k]) => k.startsWith(prefix))
+    .map(([, v]) => v);
+  if (rows.length === 0) return null;
+  const sum = k => rows.reduce((a, r) => a + (r[k] || 0), 0);
+  const app = sum('app'), sal = sum('sal');
+  return {
+    app, sal,
+    pay: sum('pay'),
+    em:  sum('em'),
+    ln:  0,
+    reg: sum('em'),
+    ptG: sum('ptG'),
+    ptU: sum('ptU'),
+    ptE: 0,
+  };
+}
+
+// ======= UTILS =======
+function sd(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+function aD(d,n){const r=sd(d);r.setDate(r.getDate()+n);return r;}
+function fD(d){return d.getFullYear()+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getDate().toString().padStart(2,'0');}
+function fJP(d){return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';}
+function dK(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function yn(v){return v!=null?v.toLocaleString()+'円':'—';}
+function nm(v){return v!=null?v.toLocaleString():'—';}
+function pc(a,b){return b?((a/b)*100).toFixed(1)+'%':'—';}
+function el(id){return document.getElementById(id);}
+function tx(id,v){const e=el(id);if(e)e.textContent=v;}
+function ht(id,v){const e=el(id);if(e)e.innerHTML=v;}
+function diff(id,cur,prev,isPct){
+  const e=el(id);if(!e)return;
+  if(prev==null||prev===undefined){e.textContent='—';e.className='kd neu';return;}
+  const d=cur-prev;
+  if(d===0){e.textContent='±0'+(isPct?'pt':'');e.className='kd neu';return;}
+  const sign=d>0?'+':'';
+  if(isPct){e.textContent=sign+d.toFixed(2)+'pt';}
+  else{e.textContent=sign+Math.round(d).toLocaleString();}
+  e.className='kd '+(d>0?'up':'dn');
+}
+function wbar(cId,pId,cv,pv,mx,col,cfmt,pfmt,cvId,pvId){
+  const cf=el(cId),pf=el(pId);
+  if(cf){cf.style.width=(cv/mx*100)+'%';cf.style.background=col;}
+  if(pf){pf.style.width=(pv/mx*100)+'%';pf.style.background=col;}
+  if(cvId)tx(cvId,cfmt(cv));
+  if(pvId)tx(pvId,pfmt(pv));
+}
+
+// ======= CHARTS =======
+function mkChart(id,type,labels,datasets,opts){
+  const cv=el(id);if(!cv)return;
+  if(charts[id]){try{charts[id].destroy();}catch(e){}}
+  charts[id]=new Chart(cv,{type,data:{labels,datasets},options:{responsive:true,plugins:{legend:{display:datasets.length>1}},...opts}});
+}
+
+function mkOvChart(){
+  // Overview chart placeholder — draws monthly trend from sheetData
+  const months=[];
+  const salArr=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(LAT.getFullYear(),LAT.getMonth()-i,1);
+    const y=d.getFullYear(),m=d.getMonth();
+    months.push(y+'/'+(m+1));
+    const md=getM(y,m);
+    salArr.push(md?md.sal:0);
+  }
+}
+
+// ======= NAV =======
+function tog(id,show){const e=el(id);if(e)e.style.display=show?'':'none';}
+let curPane='dy';
+function go(t){
+  ['dy','mo','it','pt'].forEach(p=>{
+    const pe=el('pane-'+p);if(pe)pe.classList.toggle('on',p===t);
+    document.querySelectorAll('nav .tab').forEach((tb,i)=>{
+      const tabs=['dy','mo','it','pt'];
+      tb.classList.toggle('on',tabs[i]===t);
+    });
+  });
+  curPane=t;
+}
+
+// ======= SVC ROW =======
+function makeSvcRow(rowId,pane){
+  const row=el(rowId);if(!row)return;
+  row.innerHTML='';
+  ['bone','gate','voyage'].forEach(svc=>{
+    const btn=document.createElement('button');
+    btn.className='svc-btn';
+    btn.textContent=NAMES[svc];
+    btn.onclick=()=>switchSvc(pane,svc);
+    btn.id=rowId+'-'+svc;
+    row.appendChild(btn);
+  });
+  updateSvcBtn(pane);
+}
+function updateSvcBtn(pane){
+  const svcMap={dy:dSvc,mo:mSvc,it:iSvc,pt:pSvc};
+  const cur=svcMap[pane];
+  ['bone','gate','voyage'].forEach(svc=>{
+    const btn=el(pane+'-srow-'+svc);
+    if(!btn)return;
+    btn.classList.toggle('on',svc===cur);
+    if(svc===cur){btn.style.background=CLRS[svc];btn.style.borderColor=CLRS[svc];}
+    else{btn.style.background='';btn.style.borderColor='';}
+  });
+}
+function switchSvc(pane,svc){
+  if(pane==='dy')dSvc=svc;
+  else if(pane==='mo')mSvc=svc;
+  else if(pane==='it')iSvc=svc;
+  else if(pane==='pt')pSvc=svc;
+  updateSvcBtn(pane);
+  if(pane==='dy')rdDy();
+  else if(pane==='mo')rdMo();
+  else if(pane==='it')rdIT();
+  else if(pane==='pt')rdPT();
+}
+
+// ======= DAY NAV =======
+function shD(n){
+  dDate=aD(dDate,n);
+  rdDy();
+}
+function pickD(v){
+  if(!v)return;
+  const p=v.split('-');
+  dDate=new Date(+p[0],+p[1]-1,+p[2]);
+  rdDy();
+}
+
+// ======= MONTH NAV =======
+function shM(n){
+  if(n>0){mYM=mYM.m===11?{y:mYM.y+1,m:0}:{y:mYM.y,m:mYM.m+1};}
+  else{mYM=pYM(mYM);}
+  rdMo();
+}
+function pYM(ym){return ym.m===0?{y:ym.y-1,m:11}:{y:ym.y,m:ym.m-1};}
+
+// ======= PERIOD =======
+function getRange(t){
+  const per=t==='i'?iPer:pPer;
+  const lat=LAT;
+  if(per==='prev'){const d=aD(lat,-1);return{from:d,to:d};}
+  if(per==='week'){return{from:aD(lat,-6),to:lat};}
+  if(per==='month'){return{from:aD(lat,-29),to:lat};}
+  // custom
+  const fi=el(t==='i'?'it-from':'pt-from');
+  const ti=el(t==='i'?'it-to':'pt-to');
+  if(fi&&ti&&fi.value&&ti.value){
+    const fp=fi.value.split('-'),tp=ti.value.split('-');
+    return{from:new Date(+fp[0],+fp[1]-1,+fp[2]),to:new Date(+tp[0],+tp[1]-1,+tp[2])};
+  }
+  return{from:aD(lat,-29),to:lat};
+}
+function setP(t,per){
+  if(t==='i')iPer=per;else pPer=per;
+  const prefix=t==='i'?'it':'pt';
+  document.querySelectorAll('#pane-'+prefix+' .per-btn').forEach((b,i)=>{
+    b.classList.toggle('on',['prev','week','month','custom'][i]===per);
+  });
+  tog(prefix+'-custom',per==='custom');
+  if(t==='i')rdIT();else rdPT();
+}
+function applyP(t){
+  if(t==='i')rdIT();else rdPT();
+}
+function genRange(from,to){
+  const days=[];let d=sd(from);
+  while(d<=to){days.push(sd(d));d=aD(d,1);}
+  return days;
+}
+
+// ======= SORT =======
+function setSrt(t,key){
+  if(t==='i'){
+    if(iSrt===key)iDr[key]=iDr[key]==='asc'?'desc':'asc';
+    iSrt=key;
+    document.querySelectorAll('#pane-it .srt-btn').forEach((b,i)=>{
+      b.classList.toggle('on',['sales','count','price'][i]===key);
+    });
+    renderIT();
+  } else {
+    if(pSrt===key)pDr[key]=pDr[key]==='asc'?'desc':'asc';
+    pSrt=key;
+    document.querySelectorAll('#pane-pt .srt-btn').forEach((b,i)=>{
+      b.classList.toggle('on',['consumed','count','pt'][i]===key);
+    });
+    renderPT();
+  }
+}
+function updateSrtBtns(t){setSrt(t,t==='i'?iSrt:pSrt);}
+
+// Pagination state
+const pgSt={i:{page:0,perPage:20},p:{page:0,perPage:20}};
+function pg(t,d){
+  const s=pgSt[t];
+  const data=t==='i'?iData:pData;
+  const maxP=Math.ceil(data.length/s.perPage)-1;
+  s.page=Math.max(0,Math.min(maxP,s.page+d));
+  if(t==='i')renderIT();else renderPT();
+}
+
+// ======= READ DAILY =======
+function rdDy(){
+  const svc=dSvc,col=CLRS[svc],nm2=NAMES[svc],d=dDate;
+
+  // Gate/Voyage: no data
+  if(svc !== 'bone') {
+    tx('dy-dd',fD(d));
+    tx('dy-nt','');
+    tx('dy-h',nm2+' ／ データなし');
+    tx('dy-s','このサービスのデータは現在準備中です');
+    // Clear KPI cards
+    ['dk0','dk1','dk2','dk0d','dk1d','dk2d','dk0w','dk1w','dk2w'].forEach(id=>tx(id,'—'));
+    ['dw0c','dw0p','dw1c','dw1p','dw2c','dw2p'].forEach(id=>{const e=el(id);if(e)e.style.width='0%';});
+    ['dwv0c','dwv0p','dwv1c','dwv1p','dwv2c','dwv2p'].forEach(id=>tx(id,'—'));
+    // Clear table
+    for(let i=0;i<=11;i++){tx('dt'+i,'—');tx('dc'+i,'—');}
+    // Hide item/exchange sections
+    const itSec=el('dy-it')?.closest('.card')?.previousElementSibling;
+    return;
+  }
+
+  const td=getD(d), pd=getD(aD(d,-1));
+  const dom=d.getDate();
+  tx('dy-dd',fD(d));
+  tx('dy-nt',dK(d)===dK(LAT)?'（最新データ）':'');
+  const dp=el('dy-dp');if(dp){dp.max=dK(LAT);dp.value=dK(d);}
+  tx('dy-h',nm2+' ／ '+fJP(d)+' のデータ');
+  tx('dy-s','月次累計期間：'+d.getFullYear()+'年'+(d.getMonth()+1)+'月1日 〜 '+dom+'日');
+  tx('dy-tt','日次 vs 月次累計 — '+nm2);
+
+  if(!td){
+    ht('dk0','—');ht('dk1','—');ht('dk2','—');
+    ['dk0d','dk1d','dk2d'].forEach(id=>{const e=el(id);if(e){e.textContent='—';e.className='';}});
+    ['dw0c','dw0p','dw1c','dw1p','dw2c','dw2p'].forEach(id=>{const e=el(id);if(e)e.style.width='0%';});
+    ['dwv0c','dwv0p','dwv1c','dwv1p','dwv2c','dwv2p'].forEach(id=>tx(id,'—'));
+    ['dk0w','dk1w','dk2w'].forEach(id=>{const e=el(id);if(e){e.textContent='—';e.className='';}});
+    for(let i=0;i<=11;i++){tx('dt'+i,'—');tx('dc'+i,'—');}
+    return;
+  }
+
+  const tR=td.app?td.sal/td.app*100:0;
+  const pdR=pd&&pd.app?pd.sal/pd.app*100:0;
+  const tG=td.em+td.ln;
+  const pG=pd?pd.em+pd.ln:0;
+  ht('dk0',tR.toFixed(2)+'<span style="font-size:11px;font-weight:400;color:#888">%</span>');
+  ht('dk1',td.sal.toLocaleString()+'<span style="font-size:11px;font-weight:400;color:#888"> 円</span>');
+  ht('dk2',tG+'<span style="font-size:11px;font-weight:400;color:#888"> 人</span>');
+  if(pd){diff('dk0d',tR,pdR,true);diff('dk1d',td.sal,pd.sal);diff('dk2d',tG,pG);}
+  else{['dk0d','dk1d','dk2d'].forEach(id=>{const e=el(id);if(e){e.textContent='—';e.className='';}});}
+
+  const cw=[0,1,2,3,4,5,6].map(i=>getD(aD(d,-i)));
+  const pw=[7,8,9,10,11,12,13].map(i=>getD(aD(d,-i)));
+  const safeR=x=>x&&x.app?x.sal/x.app*100:0;
+  const safeS=x=>x?x.sal:0;
+  const safeG=x=>x?x.em+x.ln:0;
+  const cwR=cw.map(safeR).reduce((a,b)=>a+b,0)/7;
+  const pwR=pw.map(safeR).reduce((a,b)=>a+b,0)/7;
+  const cwS=Math.round(cw.map(safeS).reduce((a,b)=>a+b,0)/7);
+  const pwS=Math.round(pw.map(safeS).reduce((a,b)=>a+b,0)/7);
+  const cwG=Math.round(cw.map(safeG).reduce((a,b)=>a+b,0)/7);
+  const pwG=Math.round(pw.map(safeG).reduce((a,b)=>a+b,0)/7);
+  wbar('dw0c','dw0p',cwR,pwR,Math.max(cwR,pwR,50),col,v=>v.toFixed(1)+'%',v=>v.toFixed(1)+'%','dwv0c','dwv0p');
+  wbar('dw1c','dw1p',cwS,pwS,Math.max(cwS,pwS)*1.1||1,col,v=>(v/10000).toFixed(0)+'万',v=>(v/10000).toFixed(0)+'万','dwv1c','dwv1p');
+  wbar('dw2c','dw2p',cwG,pwG,Math.max(cwG,pwG)*1.1||1,col,v=>v+'人',v=>v+'人','dwv2c','dwv2p');
+  diff('dk0w',cwR,pwR,true);diff('dk1w',cwS,pwS);diff('dk2w',cwG,pwG);
+
+  // Monthly cumulative
+  const cumDays=[];for(let i=1;i<=dom;i++){const dd=getD(new Date(d.getFullYear(),d.getMonth(),i));if(dd)cumDays.push(dd);}
+  const smC=k=>cumDays.reduce((a,x)=>a+(x[k]||0),0);
+  const cE=smC('em'),cL=0,cR2=cE,cA=smC('app'),cS=smC('sal'),cP=smC('pay'),cG=smC('ptG'),cU=smC('ptU'),cX=0;
+  tx('dt0',nm(td.em));tx('dt1',nm(td.ln));tx('dt2',nm(tG));
+  tx('dt3',yn(td.app));tx('dt4',yn(td.sal));tx('dt5',tR.toFixed(2)+'%');
+  tx('dt6',nm(td.pay));tx('dt7',td.pay?Math.round(td.sal/td.pay).toLocaleString()+'円':'—');
+  tx('dt8',nm(td.ptG));tx('dt9',nm(td.ptU));tx('dt10',nm(td.ptE));tx('dt11',pc(td.ptU,td.ptG));
+  tx('dc0',nm(cE));tx('dc1',nm(cL));tx('dc2',nm(cR2));
+  tx('dc3',yn(cA));tx('dc4',yn(cS));tx('dc5',pc(cS,cA));
+  tx('dc6',nm(cP));tx('dc7',cP?Math.round(cS/cP).toLocaleString()+'円':'—');
+  tx('dc8',nm(cG));tx('dc9',nm(cU));tx('dc10',nm(cX));tx('dc11',pc(cU,cG));
+
+  // Item/exchange sections: no data available
+  if(charts['dy-ic']){try{charts['dy-ic'].destroy();}catch(e){}}
+  if(charts['dy-ec']){try{charts['dy-ec'].destroy();}catch(e){}}
+  const ib=el('dy-ib');if(ib)ib.innerHTML='<tr><td colspan="4" style="text-align:center;color:#888;padding:1rem">データなし</td></tr>';
+  const eb=el('dy-eb');if(eb)eb.innerHTML='<tr><td colspan="4" style="text-align:center;color:#888;padding:1rem">データなし</td></tr>';
+}
+
+// ======= READ MONTHLY =======
+function rdMo(){
+  const svc=mSvc,col=CLRS[svc],nm2=NAMES[svc];
+  const {y,m}=mYM,pym=pYM(mYM);
+
+  // Gate/Voyage: no data
+  if(svc !== 'bone') {
+    tx('mo-dd',y+'年'+(m+1)+'月');
+    tx('mo-nt','');
+    tx('mo-h',nm2+' ／ データなし');
+    tx('mo-s','このサービスのデータは現在準備中です');
+    ['mk0','mk1','mk2','mk0d','mk1d','mk2d'].forEach(id=>{const e=el(id);if(e){e.textContent='—';e.className='';}});
+    for(let i=0;i<=11;i++){tx('mt'+i,'—');tx('mp'+i,'—');}
+    return;
+  }
+
+  const cur=getM(y,m),prv=getM(pym.y,pym.m);
+  const isL=y===MLAT.y&&m===MLAT.m;
+  const asOf=isL?LAT.getDate():new Date(y,m+1,0).getDate();
+  tx('mo-dd',y+'年'+(m+1)+'月');
+  tx('mo-nt',isL?'（最新データ）':'');
+  tx('mo-h',nm2+' ／ '+y+'年'+(m+1)+'月のデータ（'+asOf+'日時点）');
+  tx('mo-s','前月：'+pym.y+'年'+(pym.m+1)+'月との比較');
+  tx('mo-tt','月次集計 vs 前月 — '+nm2);
+
+  if(!cur){
+    ht('mk0','—');ht('mk1','—');ht('mk2','—');
+    ['mk0d','mk1d','mk2d'].forEach(id=>{const e=el(id);if(e){e.textContent='—';e.className='';}});
+    ['mw0c','mw0p','mw1c','mw1p','mw2c','mw2p'].forEach(id=>{const e=el(id);if(e)e.style.width='0%';});
+    ['mwv0c','mwv0p','mwv1c','mwv1p','mwv2c','mwv2p'].forEach(id=>tx(id,'—'));
+    for(let i=0;i<=11;i++){tx('mt'+i,'—');tx('mp'+i,'—');}
+    return;
+  }
+
+  const cR=cur.app?cur.sal/cur.app*100:0;
+  const pR=prv&&prv.app?prv.sal/prv.app*100:0;
+  ht('mk0',cR.toFixed(2)+'<span style="font-size:11px;font-weight:400;color:#888">%</span>');
+  ht('mk1',cur.sal.toLocaleString()+'<span style="font-size:11px;font-weight:400;color:#888"> 円</span>');
+  ht('mk2',cur.reg.toLocaleString()+'<span style="font-size:11px;font-weight:400;color:#888"> 人</span>');
+  if(prv){diff('mk0d',cR,pR,true);diff('mk1d',cur.sal,prv.sal);diff('mk2d',cur.reg,prv.reg);}
+  else{['mk0d','mk1d','mk2d'].forEach(id=>{const e=el(id);if(e){e.textContent='—';e.className='';}});}
+
+  const mxR=Math.max(cR,pR,50),mxS=Math.max(cur.sal,prv?prv.sal:0)*1.1||1,mxG=Math.max(cur.reg,prv?prv.reg:0)*1.1||1;
+  const prvR=prv?pR:0,prvS=prv?prv.sal:0,prvG=prv?prv.reg:0;
+  wbar('mw0c','mw0p',cR,prvR,mxR,col,v=>v.toFixed(1)+'%',v=>v.toFixed(1)+'%','mwv0c','mwv0p');
+  wbar('mw1c','mw1p',cur.sal,prvS,mxS,col,v=>(v/10000).toFixed(0)+'万',v=>(v/10000).toFixed(0)+'万','mwv1c','mwv1p');
+  wbar('mw2c','mw2p',cur.reg,prvG,mxG,col,v=>v+'人',v=>v+'人','mwv2c','mwv2p');
+
+  tx('mt0',nm(cur.em));tx('mt1',nm(cur.ln));tx('mt2',nm(cur.reg));
+  tx('mt3',yn(cur.app));tx('mt4',yn(cur.sal));tx('mt5',pc(cur.sal,cur.app));
+  tx('mt6',nm(cur.pay));tx('mt7',cur.pay?Math.round(cur.sal/cur.pay).toLocaleString()+'円':'—');
+  tx('mt8',nm(cur.ptG));tx('mt9',nm(cur.ptU));tx('mt10',nm(cur.ptE));tx('mt11',pc(cur.ptU,cur.ptG));
+  if(prv){
+    tx('mp0',nm(prv.em));tx('mp1',nm(prv.ln));tx('mp2',nm(prv.reg));
+    tx('mp3',yn(prv.app));tx('mp4',yn(prv.sal));tx('mp5',pc(prv.sal,prv.app));
+    tx('mp6',nm(prv.pay));tx('mp7',prv.pay?Math.round(prv.sal/prv.pay).toLocaleString()+'円':'—');
+    tx('mp8',nm(prv.ptG));tx('mp9',nm(prv.ptU));tx('mp10',nm(prv.ptE));tx('mp11',pc(prv.ptU,prv.ptG));
+  } else {
+    for(let i=0;i<=11;i++)tx('mp'+i,'—');
+  }
+
+  // Item/exchange sections: no data
+  if(charts['mo-ic']){try{charts['mo-ic'].destroy();}catch(e){}}
+  if(charts['mo-ec']){try{charts['mo-ec'].destroy();}catch(e){}}
+  const mob=el('mo-ib');if(mob)mob.innerHTML='<tr><td colspan="4" style="text-align:center;color:#888;padding:1rem">データなし</td></tr>';
+  const moeb=el('mo-eb');if(moeb)moeb.innerHTML='<tr><td colspan="4" style="text-align:center;color:#888;padding:1rem">データなし</td></tr>';
+}
+
+// ======= READ ITEM TAB =======
+function rdIT(){
+  const {from,to}=getRange('i');
+  const perm={prev:'前日',week:'直近1週間',month:'直近1カ月',custom:'カスタム期間'}[iPer];
+  tx('it-h',perm);
+  tx('it-s',iPer==='prev'?'集計日：'+fD(from):'集計期間：'+fD(from)+' 〜 '+fD(to));
+  ht('is0','—<span class="su"> 円</span>');
+  ht('is1','—<span class="su"> 件</span>');
+  ht('is2','—<span class="su"> 種</span>');
+  ht('is3','—<span class="su"> 円</span>');
+  iData=[];
+  renderIT();
+}
+function renderIT(){
+  const tb=el('it-tb');if(!tb)return;
+  tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:#888;padding:2rem;font-size:13px">このタブのデータは現在準備中です</td></tr>';
+  tx('it-pi','0 件');
+}
+
+// ======= READ POINT TAB =======
+function rdPT(){
+  const {from,to}=getRange('p');
+  const perm={prev:'前日',week:'直近1週間',month:'直近1カ月',custom:'カスタム期間'}[pPer];
+  tx('pt-h',perm);
+  tx('pt-s',pPer==='prev'?'集計日：'+fD(from):'集計期間：'+fD(from)+' 〜 '+fD(to));
+  ht('ps0','—<span class="su"> pt</span>');
+  ht('ps1','—<span class="su"> 件</span>');
+  ht('ps2','—<span class="su"> 種</span>');
+  ht('ps3','—<span class="su"> pt</span>');
+  pData=[];
+  renderPT();
+}
+function renderPT(){
+  const tb=el('pt-tb');if(!tb)return;
+  tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:#888;padding:2rem;font-size:13px">このタブのデータは現在準備中です</td></tr>';
+  tx('pt-pi','0 件');
+}
+
+// ======= INIT =======
+window.addEventListener('load', async function(){
+  ['dy','mo','it','pt'].forEach(t=>makeSvcRow(t+'-srow',t));
+  await loadData();
+  mkOvChart();
+  rdDy();
+  rdMo();
+  rdIT();
+  rdPT();
+});
+</script>
+</body>
+</html>
