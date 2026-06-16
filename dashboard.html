@@ -445,6 +445,7 @@ function mkChart(id,labels,data,col,horiz){
 function mkOvChart(){
   if(charts['ov-c']){try{charts['ov-c'].destroy();}catch(e){}}
   const cv=el('ov-c');if(!cv)return;
+  // Build monthly utilization rate from sheetData
   const labels=[],vals=[];
   for(let i=5;i>=0;i--){
     const nd=new Date(MLAT.y,MLAT.m-i,1);
@@ -603,6 +604,7 @@ function rdDy(){
   tx('dc6',nm(cP));tx('dc7',cP?Math.round(cS/cP).toLocaleString()+'円':'—');
   tx('dc8',nm(cG));tx('dc9',nm(cU));tx('dc10','0');tx('dc11',pc(cU,cG));
 
+  // 商品データ: 当月分を表示
   const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   const items=(itemsByMonth[ym]||[]).slice().sort((a,b)=>b.sales-a.sales);
   const top=items.slice(0,8);
@@ -903,6 +905,7 @@ async function initDashboard(){
   ['dy','mo','it','pt'].forEach(t=>makeSvcRow(t+'-srow',t));
   rdDy();rdMo();rdIT();rdPT();mkOvChart();
 
+  // 統合タブ: boneの当月データを更新
   const cm=getM(MLAT.y,MLAT.m);
   if(cm){
     const cR=cm.app?cm.sal/cm.app*100:0;
@@ -910,12 +913,14 @@ async function initDashboard(){
     if(ovBone){
       const sv=ovBone.querySelector('.sv2');
       if(sv)sv.innerHTML=cm.sal.toLocaleString()+'<span class="su"> 円</span>';
+      const sk=ovBone.querySelectorAll('.sk')[0];
     }
   }
 }
 
 // ======= INIT =======
 window.addEventListener('load',function(){
+  // Service rows setup (before login, so tabs look right)
   ['dy','mo','it','pt'].forEach(t=>makeSvcRow(t+'-srow',t));
 });
 </script>
