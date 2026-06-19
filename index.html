@@ -889,7 +889,8 @@ async function loadData(){
     if(lat){
       LAT=lat;
       MLAT={y:lat.getFullYear(),m:lat.getMonth()};
-      dDate=aD(new Date(lat),-1);
+      const today=new Date();today.setHours(0,0,0,0);
+      dDate=aD(today,-1);
       mYM={...MLAT};
     }
   }catch(e){
