@@ -262,14 +262,15 @@ tr:hover td{background:#F8FAFF}
   <div class="kc"><div class="kl">アプリ外課金売上</div><div class="kv" id="dk1">—</div><div class="kdiv"></div><div class="kr">前日比<span id="dk1d">—</span></div><div style="margin-top:7px;font-size:10px;color:#888;margin-bottom:3px">直近1週間 vs 前1週間</div><div class="wb"><div class="wl" style="font-weight:700">今週</div><div class="wt"><div class="wf" id="dw1c"></div></div><div class="wv" id="dwv1c">—</div></div><div class="wb"><div class="wl">前週</div><div class="wt"><div class="wf" id="dw1p" style="opacity:.4"></div></div><div class="wv" id="dwv1p">—</div></div><div class="kr" style="margin-top:4px">週次比<span id="dk1w">—</span></div></div>
   <div class="kc"><div class="kl">登録者数</div><div class="kv" id="dk2">—</div><div class="kdiv"></div><div class="kr">前日比<span id="dk2d">—</span></div><div style="margin-top:7px;font-size:10px;color:#888;margin-bottom:3px">直近1週間 vs 前1週間</div><div class="wb"><div class="wl" style="font-weight:700">今週</div><div class="wt"><div class="wf" id="dw2c"></div></div><div class="wv" id="dwv2c">—</div></div><div class="wb"><div class="wl">前週</div><div class="wt"><div class="wf" id="dw2p" style="opacity:.4"></div></div><div class="wv" id="dwv2p">—</div></div><div class="kr" style="margin-top:4px">週次比<span id="dk2w">—</span></div></div>
 </div>
+<div class="card" style="margin-bottom:14px">
+<div class="ct" style="margin-bottom:10px">直近30日 利用率推移</div>
+<div style="position:relative;height:160px"><canvas id="dy-rate30c"></canvas></div>
+</div>
 <div class="card">
 <div class="ct" id="dy-tt">日次 vs 月次累計</div>
 <table><thead><tr><th style="width:44%">指標</th><th class="r" style="width:26%">日次</th><th class="r" style="width:30%">月次累計（〜当日）</th></tr></thead>
 <tbody>
-<tr class="grp"><td colspan="3">登録ユーザー数</td></tr>
-<tr class="sub2"><td>Email</td><td class="r" id="dt0">—</td><td class="r" id="dc0">—</td></tr>
-<tr class="sub2"><td>LINE</td><td class="r" id="dt1">—</td><td class="r" id="dc1">—</td></tr>
-<tr class="sub2"><td style="font-weight:700">合計</td><td class="r" style="font-weight:700" id="dt2">—</td><td class="r" style="font-weight:700" id="dc2">—</td></tr>
+<tr><td style="font-weight:700">登録ユーザー数</td><td class="r" style="font-weight:700" id="dt2">—</td><td class="r" style="font-weight:700" id="dc2">—</td></tr>
 <tr><td>アプリ売上</td><td class="r" id="dt3">—</td><td class="r" id="dc3">—</td></tr>
 <tr><td>売り上げ</td><td class="r" id="dt4">—</td><td class="r" id="dc4">—</td></tr>
 <tr><td>利用率<span class="cb">計算</span><div style="font-size:9px;color:#888;font-weight:400">売上÷アプリ売上</div></td><td class="r" id="dt5">—</td><td class="r" id="dc5">—</td></tr>
@@ -604,6 +605,25 @@ function rdDy(){
   tx('dc6',nm(cP));tx('dc7',cP?Math.round(cS/cP).toLocaleString()+'円':'—');
   tx('dc8',nm(cG));tx('dc9',nm(cU));tx('dc10','0');tx('dc11',pc(cU,cG));
 
+
+  // 直近30日利用率グラフ
+  (function(){
+    var lbs=[],vs=[];
+    for(var gi=29;gi>=0;gi--){
+      var gd=aD(d,-gi),gr=getD(gd);
+      lbs.push((gd.getMonth()+1)+'/'+(gd.getDate()));
+      vs.push(gr&&gr.app?parseFloat((gr.sal/gr.app*100).toFixed(2)):null);
+    }
+    if(charts['dy-rate30c']){try{charts['dy-rate30c'].destroy();}catch(ex){}}
+    var gcv=el('dy-rate30c');if(!gcv)return;
+    charts['dy-rate30c']=new Chart(gcv,{type:'line',data:{labels:lbs,datasets:[
+      {data:vs,borderColor:col,backgroundColor:'rgba(55,138,221,0.07)',tension:0.3,pointRadius:2,fill:true,spanGaps:true,borderWidth:2},
+      {data:Array(30).fill(50),borderColor:'rgba(150,150,150,0.4)',borderDash:[4,4],pointRadius:0,fill:false,borderWidth:1}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+      x:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{font:{size:9},color:'#888',maxTicksLimit:15}},
+      y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{font:{size:9},color:'#888',callback:function(v){return v+'%'}},min:0}
+    }}});
+  })();
   // 商品データ: 当月分を表示
   const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   const items=(itemsByMonth[ym]||[]).slice().sort((a,b)=>b.sales-a.sales);
