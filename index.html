@@ -306,19 +306,20 @@ tr:hover td{background:#F8FAFF}
 <div class="sub" id="mo-s"></div>
 <div class="kg">
   <div class="kc"><div class="kl">利用率</div><div class="kv" id="mk0">—</div><div class="kdiv"></div><div class="kr">前月比<span id="mk0d">—</span></div><div style="margin-top:7px;font-size:10px;color:#888;margin-bottom:3px">当月 vs 前月</div><div class="wb"><div class="wl" style="font-weight:700">当月</div><div class="wt"><div class="wf" id="mw0c"></div></div><div class="wv" id="mwv0c">—</div></div><div class="wb"><div class="wl">前月</div><div class="wt"><div class="wf" id="mw0p" style="opacity:.4"></div></div><div class="wv" id="mwv0p">—</div></div></div>
-  <div class="kc"><div class="kl">売り上げ</div><div class="kv" id="mk1">—</div><div class="kdiv"></div><div class="kr">前月比<span id="mk1d">—</span></div><div style="margin-top:7px;font-size:10px;color:#888;margin-bottom:3px">当月 vs 前月</div><div class="wb"><div class="wl" style="font-weight:700">当月</div><div class="wt"><div class="wf" id="mw1c"></div></div><div class="wv" id="mwv1c">—</div></div><div class="wb"><div class="wl">前月</div><div class="wt"><div class="wf" id="mw1p" style="opacity:.4"></div></div><div class="wv" id="mwv1p">—</div></div></div>
+  <div class="kc"><div class="kl">アプリ外課金売上</div><div class="kv" id="mk1">—</div><div class="kdiv"></div><div class="kr">前月比<span id="mk1d">—</span></div><div style="margin-top:7px;font-size:10px;color:#888;margin-bottom:3px">当月 vs 前月</div><div class="wb"><div class="wl" style="font-weight:700">当月</div><div class="wt"><div class="wf" id="mw1c"></div></div><div class="wv" id="mwv1c">—</div></div><div class="wb"><div class="wl">前月</div><div class="wt"><div class="wf" id="mw1p" style="opacity:.4"></div></div><div class="wv" id="mwv1p">—</div></div></div>
   <div class="kc"><div class="kl">登録者数</div><div class="kv" id="mk2">—</div><div class="kdiv"></div><div class="kr">前月比<span id="mk2d">—</span></div><div style="margin-top:7px;font-size:10px;color:#888;margin-bottom:3px">当月 vs 前月</div><div class="wb"><div class="wl" style="font-weight:700">当月</div><div class="wt"><div class="wf" id="mw2c"></div></div><div class="wv" id="mwv2c">—</div></div><div class="wb"><div class="wl">前月</div><div class="wt"><div class="wf" id="mw2p" style="opacity:.4"></div></div><div class="wv" id="mwv2p">—</div></div></div>
+</div>
+<div class="card" style="margin-bottom:14px">
+<div class="ct" style="margin-bottom:10px">月次 利用率推移（直近6ヶ月）</div>
+<div style="position:relative;height:160px"><canvas id="mo-rate6c"></canvas></div>
 </div>
 <div class="card">
 <div class="ct" id="mo-tt">月次集計 vs 前月</div>
 <table><thead><tr><th style="width:44%">指標</th><th class="r" style="width:28%">当月</th><th class="r" style="width:28%">前月</th></tr></thead>
 <tbody>
-<tr class="grp"><td colspan="3">登録ユーザー数</td></tr>
-<tr class="sub2"><td>Email</td><td class="r" id="mt0">—</td><td class="r" id="mp0">—</td></tr>
-<tr class="sub2"><td>LINE</td><td class="r" id="mt1">—</td><td class="r" id="mp1">—</td></tr>
-<tr class="sub2"><td style="font-weight:700">合計</td><td class="r" style="font-weight:700" id="mt2">—</td><td class="r" style="font-weight:700" id="mp2">—</td></tr>
+<tr><td style="font-weight:700">登録ユーザー数</td><td class="r" style="font-weight:700" id="mt2">—</td><td class="r" style="font-weight:700" id="mp2">—</td></tr>
 <tr><td>アプリ売上</td><td class="r" id="mt3">—</td><td class="r" id="mp3">—</td></tr>
-<tr><td>売り上げ</td><td class="r" id="mt4">—</td><td class="r" id="mp4">—</td></tr>
+<tr><td>アプリ外課金売上</td><td class="r" id="mt4">—</td><td class="r" id="mp4">—</td></tr>
 <tr><td>利用率<span class="cb">計算</span></td><td class="r" id="mt5">—</td><td class="r" id="mp5">—</td></tr>
 <tr><td>決済数</td><td class="r" id="mt6">—</td><td class="r" id="mp6">—</td></tr>
 <tr><td>決済単価<span class="cb">計算</span></td><td class="r" id="mt7">—</td><td class="r" id="mp7">—</td></tr>
@@ -716,16 +717,35 @@ function rdMo(){
   wbar('mw1c','mw1p',cur.sal,prvS,mxS,col,v=>(v/10000).toFixed(0)+'万',v=>(v/10000).toFixed(0)+'万','mwv1c','mwv1p');
   wbar('mw2c','mw2p',cur.reg,prvG,mxG,col,v=>v+'人',v=>v+'人','mwv2c','mwv2p');
 
-  tx('mt0',nm(cur.em));tx('mt1','0');tx('mt2',nm(cur.reg));
+  // 直近6ヶ月利用率グラフ
+  (function(){
+    var mlbs=[],mvs=[];
+    for(var mi=5;mi>=0;mi--){
+      var nd=new Date(y,m-mi,1),my=nd.getFullYear(),mm2=nd.getMonth();
+      mlbs.push(my+'/'+(mm2+1));
+      var md=getM(my,mm2);
+      mvs.push(md&&md.app?parseFloat((md.sal/md.app*100).toFixed(2)):null);
+    }
+    if(charts['mo-rate6c']){try{charts['mo-rate6c'].destroy();}catch(e){}}
+    var mcv=el('mo-rate6c');if(!mcv)return;
+    charts['mo-rate6c']=new Chart(mcv,{type:'line',data:{labels:mlbs,datasets:[
+      {data:mvs,borderColor:col,backgroundColor:'rgba(55,138,221,0.07)',tension:0.3,pointRadius:4,fill:true,spanGaps:true,borderWidth:2},
+      {data:Array(6).fill(50),borderColor:'rgba(150,150,150,0.4)',borderDash:[4,4],pointRadius:0,fill:false,borderWidth:1}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+      x:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{font:{size:10},color:'#888'}},
+      y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{font:{size:10},color:'#888',callback:function(v){return v+'%'}},min:0}
+    }}});
+  })();
+  tx('mt2',nm(cur.reg));
   tx('mt3',yn(cur.app));tx('mt4',yn(cur.sal));tx('mt5',pc(cur.sal,cur.app));
   tx('mt6',nm(cur.pay));tx('mt7',cur.pay?Math.round(cur.sal/cur.pay).toLocaleString()+'円':'—');
   tx('mt8',nm(cur.ptG));tx('mt9',nm(cur.ptU));tx('mt10','0');tx('mt11',pc(cur.ptU,cur.ptG));
   if(prv){
-    tx('mp0',nm(prv.em));tx('mp1','0');tx('mp2',nm(prv.reg));
+    tx('mp2',nm(prv.reg));
     tx('mp3',yn(prv.app));tx('mp4',yn(prv.sal));tx('mp5',pc(prv.sal,prv.app));
     tx('mp6',nm(prv.pay));tx('mp7',prv.pay?Math.round(prv.sal/prv.pay).toLocaleString()+'円':'—');
     tx('mp8',nm(prv.ptG));tx('mp9',nm(prv.ptU));tx('mp10','0');tx('mp11',pc(prv.ptU,prv.ptG));
-  } else {for(let i=0;i<=11;i++)tx('mp'+i,'—');}
+  } else {tx('mp2','—');for(var i=3;i<=11;i++)tx('mp'+i,'—');}
 
   const ym=`${y}-${String(m+1).padStart(2,'0')}`;
   const items=(itemsByMonth[ym]||[]).slice().sort((a,b)=>b.sales-a.sales);
