@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -259,7 +259,7 @@ tr:hover td{background:#F8FAFF}
 <div class="sub" id="dy-s"></div>
 <div class="kg">
   <div class="kc"><div class="kl">利用率</div><div class="kv" id="dk0">—</div><div class="kdiv"></div><div class="kr">前日比<span id="dk0d">—</span></div><div style="margin-top:7px;font-size:10px;color:#888;margin-bottom:3px">直近1週間 vs 前1週間</div><div class="wb"><div class="wl" style="font-weight:700">今週</div><div class="wt"><div class="wf" id="dw0c"></div></div><div class="wv" id="dwv0c">—</div></div><div class="wb"><div class="wl">前週</div><div class="wt"><div class="wf" id="dw0p" style="opacity:.4"></div></div><div class="wv" id="dwv0p">—</div></div><div class="kr" style="margin-top:4px">週次比<span id="dk0w">—</span></div></div>
-  <div class="kc"><div class="kl">売り上げ</div><div class="kv" id="dk1">—</div><div class="kdiv"></div><div class="kr">前日比<span id="dk1d">—</span></div><div style="margin-top:7px;font-size:10px;color:#888;margin-bottom:3px">直近1週間 vs 前1週間</div><div class="wb"><div class="wl" style="font-weight:700">今週</div><div class="wt"><div class="wf" id="dw1c"></div></div><div class="wv" id="dwv1c">—</div></div><div class="wb"><div class="wl">前週</div><div class="wt"><div class="wf" id="dw1p" style="opacity:.4"></div></div><div class="wv" id="dwv1p">—</div></div><div class="kr" style="margin-top:4px">週次比<span id="dk1w">—</span></div></div>
+  <div class="kc"><div class="kl">アプリ外課金売上</div><div class="kv" id="dk1">—</div><div class="kdiv"></div><div class="kr">前日比<span id="dk1d">—</span></div><div style="margin-top:7px;font-size:10px;color:#888;margin-bottom:3px">直近1週間 vs 前1週間</div><div class="wb"><div class="wl" style="font-weight:700">今週</div><div class="wt"><div class="wf" id="dw1c"></div></div><div class="wv" id="dwv1c">—</div></div><div class="wb"><div class="wl">前週</div><div class="wt"><div class="wf" id="dw1p" style="opacity:.4"></div></div><div class="wv" id="dwv1p">—</div></div><div class="kr" style="margin-top:4px">週次比<span id="dk1w">—</span></div></div>
   <div class="kc"><div class="kl">登録者数</div><div class="kv" id="dk2">—</div><div class="kdiv"></div><div class="kr">前日比<span id="dk2d">—</span></div><div style="margin-top:7px;font-size:10px;color:#888;margin-bottom:3px">直近1週間 vs 前1週間</div><div class="wb"><div class="wl" style="font-weight:700">今週</div><div class="wt"><div class="wf" id="dw2c"></div></div><div class="wv" id="dwv2c">—</div></div><div class="wb"><div class="wl">前週</div><div class="wt"><div class="wf" id="dw2p" style="opacity:.4"></div></div><div class="wv" id="dwv2p">—</div></div><div class="kr" style="margin-top:4px">週次比<span id="dk2w">—</span></div></div>
 </div>
 <div class="card">
@@ -595,11 +595,11 @@ function rdDy(){
   const cumDays=[];for(let i=1;i<=dom;i++){const dd=getD(new Date(d.getFullYear(),d.getMonth(),i));if(dd)cumDays.push(dd);}
   const smC=k=>cumDays.reduce((a,x)=>a+(x[k]||0),0);
   const cE=smC('em'),cL=0,cA=smC('app'),cS=smC('sal'),cP=smC('pay'),cG=smC('ptG'),cU=smC('ptU');
-  tx('dt0',nm(td.em));tx('dt1','0');tx('dt2',nm(tG));
+  tx('dt2',nm(tG));
   tx('dt3',yn(td.app));tx('dt4',yn(td.sal));tx('dt5',tR.toFixed(2)+'%');
   tx('dt6',nm(td.pay));tx('dt7',td.pay?Math.round(td.sal/td.pay).toLocaleString()+'円':'—');
   tx('dt8',nm(td.ptG));tx('dt9',nm(td.ptU));tx('dt10','0');tx('dt11',pc(td.ptU,td.ptG));
-  tx('dc0',nm(cE));tx('dc1','0');tx('dc2',nm(cE));
+  tx('dc2',nm(cE));
   tx('dc3',yn(cA));tx('dc4',yn(cS));tx('dc5',pc(cS,cA));
   tx('dc6',nm(cP));tx('dc7',cP?Math.round(cS/cP).toLocaleString()+'円':'—');
   tx('dc8',nm(cG));tx('dc9',nm(cU));tx('dc10','0');tx('dc11',pc(cU,cG));
