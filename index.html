@@ -1060,6 +1060,7 @@ async function initDashboard(){
   await fetchGateVoyageData();
   const _t=new Date();
   ovYM=_t.getMonth()===0?{y:_t.getFullYear()-1,m:11}:{y:_t.getFullYear(),m:_t.getMonth()-1};
+  mYM=_t.getMonth()===0?{y:_t.getFullYear()-1,m:11}:{y:_t.getFullYear(),m:_t.getMonth()-1};
   ['dy','mo','it','pt'].forEach(t=>makeSvcRow(t+'-srow',t));
   rdDy();rdMo();rdIT();rdPT();rdOv();
 
