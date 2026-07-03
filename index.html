@@ -352,8 +352,8 @@ tr:hover td{background:#F8FAFF}
 <!-- ===== ポイント交換 ===== -->
 <div id="pane-pt" class="pane">
 <div class="srow" id="pt-srow"></div>
-<div class="ptabs"><button class="ptab" id="ptp-prev" onclick="setP('p','prev')">前日</button><button class="ptab" id="ptp-week" onclick="setP('p','week')">直近1週間</button><button class="ptab on" id="ptp-month" onclick="setP('p','month')">直近1カ月</button><button class="ptab" id="ptp-custom" onclick="setP('p','custom')">カスタム</button></div>
-<div id="pt-cr" style="display:none" class="crange"><label>開始：</label><input type="date" id="pt-f"><label>終了：</label><input type="date" id="pt-t"><button class="ab" onclick="applyP('p')">適用</button></div>
+<div class="ptabs"><button class="ptab" id="ptp-prev" onclick="setP('p','prev')">前月</button><button class="ptab" id="ptp-3m" onclick="setP('p','3m')">直近3ヶ月</button><button class="ptab on" id="ptp-6m" onclick="setP('p','6m')">直近6ヶ月</button><button class="ptab" id="ptp-custom" onclick="setP('p','custom')">カスタム</button></div>
+<div id="pt-cr" style="display:none" class="crange"><label>開始月：</label><input type="month" id="pt-f"><label>終了月：</label><input type="month" id="pt-t"><button class="ab" onclick="applyP('p')">適用</button></div>
 <div class="head" id="pt-h"></div><div class="sub" id="pt-s"></div>
 <div class="s4">
   <div class="sc"><div class="sl">交換ポイント累計</div><div class="sv" id="ps0">—<span class="su"> pt</span></div></div>
@@ -361,9 +361,7 @@ tr:hover td{background:#F8FAFF}
   <div class="sc"><div class="sl">取扱アイテム数</div><div class="sv" id="ps2">—<span class="su"> 種</span></div></div>
   <div class="sc"><div class="sl">平均交換ポイント</div><div class="sv" id="ps3">—<span class="su"> pt</span></div></div>
 </div>
-<div class="card" style="padding:20px 22px;color:var(--text2);font-size:13px;font-weight:500">
-  ポイント交換の明細データは現在準備中です。
-</div>
+<div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table style="table-layout:fixed"><thead><tr><th>商品名</th><th class="r" style="width:90px">交換数</th><th class="r" style="width:100px">ポイント数</th><th class="r" style="width:130px">消費ポイント</th></tr></thead><tbody id="pt-tb"></tbody></table></div><div class="pinfo" id="pt-pi"></div></div>
 </div>
 
 </div><!-- /wrap -->
@@ -383,11 +381,11 @@ let MLAT={y:LAT.getFullYear(),m:LAT.getMonth()};
 let dSvc='bone',mSvc='bone',iSvc='bone',pSvc='bone';
 let dDate=(()=>{const d=new Date();d.setDate(d.getDate()-1);return d;})();
 let mYM={...MLAT};
-let iPer='6m',pPer='month';
+let iPer='6m',pPer='6m';
 let iSrt='sales',iDr={sales:'desc',count:'desc',price:'desc'};
 let pSrt='consumed',pDr={consumed:'desc',count:'desc',pt:'desc'};
 let iData=[],pData=[];
-let sheetData={},itemsByMonth={};
+let sheetData={},itemsByMonth={},exchangeByMonth={};
 let accessToken=null,tokenClient=null;
 const charts={};
 const detSt={};
@@ -774,7 +772,7 @@ function setP(tab,per){
     const cr=el('it-cr');if(cr)cr.style.display=per==='custom'?'flex':'none';
     if(per!=='custom')rdIT();
   } else {
-    ['prev','week','month','custom'].forEach(k=>{const b=el('ptp-'+k);if(b)b.classList.toggle('on',k===per);});
+    ['prev','3m','6m','custom'].forEach(k=>{const b=el('ptp-'+k);if(b)b.classList.toggle('on',k===per);});
     const cr=el('pt-cr');if(cr)cr.style.display=per==='custom'?'flex':'none';
     if(per!=='custom')rdPT();
   }
@@ -833,13 +831,49 @@ function updateSrtBtns(tab){
 }
 
 // ======= POINTS TAB =======
-function rdPT(){
-  tx('pt-h','準備中');
-  tx('pt-s','ポイント交換の明細データは現在準備中です');
-  ht('ps0','—<span class="su"> pt</span>');ht('ps1','—<span class="su"> 件</span>');
-  ht('ps2','—<span class="su"> 種</span>');ht('ps3','—<span class="su"> pt</span>');
+function getExchMonthRange(){
+  const now=MLAT;
+  if(pPer==='prev'){const p=pYM(now);return{fromYM:`${p.y}-${String(p.m+1).padStart(2,'0')}`,toYM:`${p.y}-${String(p.m+1).padStart(2,'0')}`};}
+  if(pPer==='3m'){let pm=now.m-2,py=now.y;if(pm<0){py--;pm+=12;}return{fromYM:`${py}-${String(pm+1).padStart(2,'0')}`,toYM:`${now.y}-${String(now.m+1).padStart(2,'0')}`};}
+  if(pPer==='6m'){let pm=now.m-5,py=now.y;if(pm<0){py--;pm+=12;}return{fromYM:`${py}-${String(pm+1).padStart(2,'0')}`,toYM:`${now.y}-${String(now.m+1).padStart(2,'0')}`};}
+  const fi=el('pt-f'),ti=el('pt-t');
+  if(fi&&ti&&fi.value&&ti.value)return{fromYM:fi.value,toYM:ti.value};
+  return{fromYM:`${now.y}-${String(now.m+1).padStart(2,'0')}`,toYM:`${now.y}-${String(now.m+1).padStart(2,'0')}`};
 }
-function renderPT(){}
+function rdPT(){
+  const{fromYM,toYM}=getExchMonthRange();
+  const lblMap={prev:'前月','3m':'直近3ヶ月','6m':'直近6ヶ月',custom:'カスタム期間'};
+  tx('pt-h',lblMap[pPer]||pPer);
+  tx('pt-s',pPer==='prev'?`集計月：${fromYM}`:`集計期間：${fromYM} 〜 ${toYM}`);
+  const map={};
+  for(const[ym,items] of Object.entries(exchangeByMonth)){
+    if(ym<fromYM||ym>toYM)continue;
+    for(const it of items){
+      if(!map[it.name])map[it.name]={name:it.name,count:0,pt:it.pt,consumed:0};
+      map[it.name].count+=it.count;
+      map[it.name].consumed+=it.consumed;
+    }
+  }
+  pData=Object.values(map);
+  const tC=pData.reduce((a,x)=>a+x.count,0);
+  const tP=pData.reduce((a,x)=>a+x.consumed,0);
+  ht('ps0',tP.toLocaleString()+'<span class="su"> pt</span>');
+  ht('ps1',tC.toLocaleString()+'<span class="su"> 件</span>');
+  ht('ps2',pData.length+'<span class="su"> 種</span>');
+  ht('ps3',(tC?Math.round(tP/tC):0).toLocaleString()+'<span class="su"> pt</span>');
+  renderPT();
+}
+function renderPT(){
+  const sorted=[...pData].sort((a,b)=>b.consumed-a.consumed);
+  const tb=el('pt-tb');if(!tb)return;tb.innerHTML='';
+  if(sorted.length===0){tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:#888;padding:2rem">データなし</td></tr>';tx('pt-pi','0 件');return;}
+  sorted.forEach(it=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td style="font-size:11px">'+it.name+'</td><td class="r">'+it.count.toLocaleString()+'</td><td class="r">'+it.pt.toLocaleString()+'pt</td><td class="r">'+it.consumed.toLocaleString()+'pt</td>';
+    tb.appendChild(tr);
+  });
+  tx('pt-pi',sorted.length.toLocaleString()+' 件');
+}
 
 // ======= GOOGLE AUTH =======
 function signIn(){
@@ -890,7 +924,7 @@ async function fetchAllSheetData(){
   );
   const batch=await batchRes.json();
   if(batch.error)throw new Error(batch.error.message);
-  const allRows=[],ibm={};
+  const allRows=[],ibm={},ebm={};
   for(let i=0;i<monthSheets.length;i++){
     const title=monthSheets[i].properties.title;
     const mm=title.match(/(\d{4})年(\d+)月/);
@@ -907,16 +941,24 @@ async function fetchAllSheetData(){
         if(sales>0||count>0)items.push({name,price,count,sales});
       }
       if(items.length>0)ibm[ym]=items;
+      const exchItems=[];
+      for(const row of dataRows){
+        const ename=(row[34]||'').toString().trim();
+        if(!ename)continue;
+        const ec=parseNum(row[35]),ep=parseNum(row[36]),econs=parseNum(row[37]);
+        if(ec>0||econs>0)exchItems.push({name:ename,count:ec,pt:ep,consumed:econs});
+      }
+      if(exchItems.length>0)ebm[ym]=exchItems;
     }
   }
-  return{allRows,itemsByMonth:ibm};
+  return{allRows,itemsByMonth:ibm,exchangeByMonth:ebm};
 }
 
 async function loadData(){
   document.body.style.opacity='0.5';
   try{
-    const{allRows:dataRows,itemsByMonth:ibm}=await fetchAllSheetData();
-    itemsByMonth=ibm;
+    const{allRows:dataRows,itemsByMonth:ibm,exchangeByMonth:ebm}=await fetchAllSheetData();
+    itemsByMonth=ibm;exchangeByMonth=ebm;
     sheetData={};
     let lat=null;
     for(const cols of dataRows){
