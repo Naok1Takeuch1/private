@@ -266,10 +266,6 @@ tr:hover td{background:#F8FAFF}
 <div class="ct" style="margin-bottom:10px">直近30日 利用率推移</div>
 <div style="position:relative;height:160px"><canvas id="dy-rate30c"></canvas></div>
 </div>
-<div class="card" style="margin-bottom:14px">
-<div class="ct" style="margin-bottom:10px">直近30日 利用率推移</div>
-<div style="position:relative;height:160px"><canvas id="dy-rate30c"></canvas></div>
-</div>
 <div class="card">
 <div class="ct" id="dy-tt">日次 vs 月次累計</div>
 <table><thead><tr><th style="width:44%">指標</th><th class="r" style="width:26%">日次</th><th class="r" style="width:30%">月次累計（〜当日）</th></tr></thead>
@@ -284,10 +280,8 @@ tr:hover td{background:#F8FAFF}
 <tr><td>ポイント発行率<span class="cb">計算</span><div style="font-size:9px;color:#888;font-weight:400">発行ポイント÷売り上げ</div></td><td class="r" id="dt11">—</td><td class="r" id="dc11">—</td></tr>
 </tbody></table>
 </div>
-<div class="secl">商品別 売り上げ（月次）</div>
-<div class="card"><div class="sh"><div class="ct" id="dy-it">商品別 売り上げ</div><button class="detb" id="dy-itb" onclick="tog('dy-it')">詳細</button></div><div style="position:relative;height:200px"><canvas id="dy-ic"></canvas></div><div class="detp" id="dy-it-p"><table><thead><tr><th style="width:42%">商品名</th><th class="r" style="width:16%">単価</th><th class="r" style="width:14%">個数</th><th class="r" style="width:28%">売上</th></tr></thead><tbody id="dy-ib"></tbody></table></div></div>
-<div class="secl">アイテム交換 内訳（日次）</div>
-<div class="card"><div class="sh"><div class="ct" id="dy-ex">アイテム交換</div><button class="detb" id="dy-exb" onclick="tog('dy-ex')">詳細</button></div><div style="position:relative;height:170px"><canvas id="dy-ec"></canvas></div><div class="detp" id="dy-ex-p"><table><thead><tr><th style="width:40%">アイテム名</th><th class="r" style="width:18%">ポイント</th><th class="r" style="width:16%">交換数</th><th class="r" style="width:26%">消費ポイント</th></tr></thead><tbody id="dy-eb"></tbody></table></div></div>
+
+
 </div>
 
 <!-- ===== 月次 ===== -->
@@ -325,8 +319,7 @@ tr:hover td{background:#F8FAFF}
 <tr><td>ポイント発行率<span class="cb">計算</span><div style="font-size:9px;color:#888;font-weight:400">発行ポイント÷売り上げ</div></td><td class="r" id="mt11">—</td><td class="r" id="mp11">—</td></tr>
 </tbody></table>
 </div>
-<div class="secl">商品別 売り上げ（月次）</div>
-<div class="card"><div class="sh"><div class="ct" id="mo-it">商品別 売り上げ</div><button class="detb" id="mo-itb" onclick="tog('mo-it')">詳細</button></div><div style="position:relative;height:220px"><canvas id="mo-ic"></canvas></div><div class="detp" id="mo-it-p"><table><thead><tr><th style="width:42%">商品名</th><th class="r" style="width:16%">単価</th><th class="r" style="width:14%">個数</th><th class="r" style="width:28%">売上</th></tr></thead><tbody id="mo-ib"></tbody></table></div></div>
+
 <div class="secl">アイテム交換 内訳（月次）</div>
 <div class="card"><div class="sh"><div class="ct" id="mo-ex">アイテム交換</div><button class="detb" id="mo-exb" onclick="tog('mo-ex')">詳細</button></div><div style="position:relative;height:170px"><canvas id="mo-ec"></canvas></div><div class="detp" id="mo-ex-p"><table><thead><tr><th style="width:40%">アイテム名</th><th class="r" style="width:18%">ポイント</th><th class="r" style="width:16%">交換数</th><th class="r" style="width:26%">消費ポイント</th></tr></thead><tbody id="mo-eb"></tbody></table></div></div>
 </div>
