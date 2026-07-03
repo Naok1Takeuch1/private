@@ -321,7 +321,7 @@ tr:hover td{background:#F8FAFF}
 </div>
 
 <div class="secl">アイテム交換 内訳（月次）</div>
-<div class="card"><div class="sh"><div class="ct" id="mo-ex">アイテム交換</div><button class="detb" id="mo-exb" onclick="tog('mo-ex')">詳細</button></div><div style="position:relative;height:170px"><canvas id="mo-ec"></canvas></div><div class="detp" id="mo-ex-p"><table><thead><tr><th style="width:40%">アイテム名</th><th class="r" style="width:18%">ポイント</th><th class="r" style="width:16%">交換数</th><th class="r" style="width:26%">消費ポイント</th></tr></thead><tbody id="mo-eb"></tbody></table></div></div>
+<div class="card" style="padding:0;overflow:hidden"><div style="padding:20px 22px 14px"><div class="ct" id="mo-ex">アイテム交換 内訳</div></div><div style="overflow-x:auto"><table style="table-layout:fixed"><thead><tr><th>商品名</th><th class="r" style="width:90px">交換数</th><th class="r" style="width:100px">ポイント数</th><th class="r" style="width:130px">消費ポイント</th></tr></thead><tbody id="mo-eb"></tbody></table></div><div class="pinfo" id="mo-ep"></div></div>
 </div>
 
 <!-- ===== 商品 ===== -->
@@ -745,8 +745,13 @@ function rdMo(){
     if(items.length===0){mob.innerHTML='<tr><td colspan="4" style="text-align:center;color:#888;padding:1rem">データなし</td></tr>';}
     else{mob.innerHTML='';items.forEach(x=>{const tr=document.createElement('tr');tr.innerHTML='<td style="font-size:10px">'+x.name+'</td><td class="r">'+x.price.toLocaleString()+'円</td><td class="r">'+x.count+'個</td><td class="r">'+x.sales.toLocaleString()+'円</td>';mob.appendChild(tr);});}
   }
-  if(charts['mo-ec']){try{charts['mo-ec'].destroy();}catch(e){}}
-  const moeb=el('mo-eb');if(moeb)moeb.innerHTML='<tr><td colspan="4" style="text-align:center;color:#888;padding:1rem">データなし</td></tr>';
+  const moeb=el('mo-eb');
+  if(moeb){
+    const exchList=(exchangeByMonth[ym]||[]).slice().sort((a,b)=>b.consumed-a.consumed);
+    if(exchList.length===0){moeb.innerHTML='<tr><td colspan="4" style="text-align:center;color:#888;padding:1rem">データなし</td></tr>';}
+    else{moeb.innerHTML='';exchList.forEach(it=>{const tr=document.createElement('tr');tr.innerHTML='<td style="font-size:11px">'+it.name+'</td><td class="r">'+it.count.toLocaleString()+'</td><td class="r">'+it.pt.toLocaleString()+'pt</td><td class="r">'+it.consumed.toLocaleString()+'pt</td>';moeb.appendChild(tr);});}
+    const mep=el('mo-ep');if(mep)mep.textContent=exchList.length.toLocaleString()+' 件';
+  }
 }
 function shM(n){
   let{y,m}=mYM;m+=n;
