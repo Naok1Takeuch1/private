@@ -386,6 +386,8 @@ let iSrt='sales',iDr={sales:'desc',count:'desc',price:'desc'};
 let pSrt='consumed',pDr={consumed:'desc',count:'desc',pt:'desc'};
 let iData=[],pData=[];
 let sheetData={},itemsByMonth={},exchangeByMonth={};
+let gateMonthly={},voyageMonthly={},gateItems={},voyageItems={};
+const GV_SS_ID='1aMT3kouMohaoOnIb8KcxzJCW-QsjjnuSC2hkc1cwZZc';
 let accessToken=null,tokenClient=null;
 const charts={};
 const detSt={};
@@ -656,21 +658,17 @@ function shD(n){const nx=aD(dDate,n);if(nx>LAT)return;dDate=nx;rdDy();}
 function pickD(v){if(!v)return;const p=v.split('-');dDate=new Date(+p[0],+p[1]-1,+p[2]);rdDy();}
 
 // ======= MONTHLY =======
+function getMoData(svc,y,m){
+  const ym=`${y}-${String(m+1).padStart(2,'0')}`;
+  if(svc==='gate')return gateMonthly[ym]||null;
+  if(svc==='voyage')return voyageMonthly[ym]||null;
+  return getM(y,m);
+}
 function rdMo(){
   const svc=mSvc,col=CLRS[svc],svcNm=NAMES[svc];
   const{y,m}=mYM,pym=pYM(mYM);
 
-  if(svc!=='bone'){
-    tx('mo-dd',y+'年'+(m+1)+'月');tx('mo-nt','');
-    tx('mo-h',svcNm+' ／ データなし');
-    tx('mo-s','このサービスのデータは現在準備中です');
-    ['mk0','mk1','mk2'].forEach(id=>ht(id,'—'));
-    ['mk0d','mk1d','mk2d'].forEach(id=>{const e=el(id);if(e){e.textContent='—';e.className='';}});
-    for(let i=0;i<=11;i++){tx('mt'+i,'—');tx('mp'+i,'—');}
-    return;
-  }
-
-  const cur=getM(y,m),prv=getM(pym.y,pym.m);
+  const cur=getMoData(svc,y,m),prv=getMoData(svc,pym.y,pym.m);
   const isL=y===MLAT.y&&m===MLAT.m;
   const asOf=isL?LAT.getDate():new Date(y,m+1,0).getDate();
   tx('mo-dd',y+'年'+(m+1)+'月');
@@ -735,7 +733,8 @@ function rdMo(){
   } else {tx('mp2','—');for(var i=3;i<=11;i++)tx('mp'+i,'—');}
 
   const ym=`${y}-${String(m+1).padStart(2,'0')}`;
-  const items=(itemsByMonth[ym]||[]).slice().sort((a,b)=>b.sales-a.sales);
+  const srcIt=svc==='gate'?gateItems:svc==='voyage'?voyageItems:itemsByMonth;
+  const items=(srcIt[ym]||[]).slice().sort((a,b)=>b.sales-a.sales);
   const top=items.slice(0,8);
   if(top.length>0){
     mkChart('mo-ic',top.map(x=>x.name.length>12?x.name.slice(0,12)+'…':x.name),top.map(x=>x.sales),col,true);
@@ -792,7 +791,8 @@ function rdIT(){
   tx('it-s',iPer==='prev'?`集計月：${fromYM}`:`集計期間：${fromYM} 〜 ${toYM}`);
 
   const map={};
-  for(const[ym,items]of Object.entries(itemsByMonth)){
+  const srcItems=iSvc==='gate'?gateItems:iSvc==='voyage'?voyageItems:itemsByMonth;
+  for(const[ym,items]of Object.entries(srcItems)){
     if(ym<fromYM||ym>toYM)continue;
     for(const it of items){
       if(!map[it.name])map[it.name]={name:it.name,price:it.price,count:0,sales:0};
@@ -1000,8 +1000,60 @@ async function loadData(){
   }
 }
 
+async function fetchGateVoyageData(){
+  try{
+    const metaRes=await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${GV_SS_ID}?fields=sheets.properties`,
+      {headers:{Authorization:'Bearer '+accessToken}}
+    );
+    const meta=await metaRes.json();
+    if(meta.error)throw new Error(meta.error.message);
+    const tgSheets=meta.sheets.filter(s=>s.properties.title==='Gate月次データ'||s.properties.title==='Voyage月次データ');
+    if(tgSheets.length===0)return;
+    const ranges=tgSheets.map(s=>encodeURIComponent(s.properties.title));
+    const bRes=await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${GV_SS_ID}/values:batchGet?ranges=${ranges.join('&ranges=')}`,
+      {headers:{Authorization:'Bearer '+accessToken}}
+    );
+    const batch=await bRes.json();
+    if(batch.error)throw new Error(batch.error.message);
+    for(let i=0;i<tgSheets.length;i++){
+      const title=tgSheets[i].properties.title;
+      const isGate=title.includes('Gate');
+      const mMap=isGate?gateMonthly:voyageMonthly;
+      const itMap=isGate?gateItems:voyageItems;
+      const rows=(batch.valueRanges[i].values||[]).slice(1);
+      const yrMap={};
+      for(const row of rows){
+        const ms=(row[0]||'').toString().trim();
+        const mm=ms.match(/(\d{4})年(\d+)月/);
+        if(mm)yrMap[String(parseInt(mm[2]))]=mm[1];
+      }
+      for(const row of rows){
+        const ms=(row[0]||'').toString().trim();
+        const mm=ms.match(/(\d{4})年(\d+)月/);
+        if(!mm)continue;
+        const ym=`${mm[1]}-${String(mm[2]).padStart(2,'0')}`;
+        mMap[ym]={reg:parseNum(row[1]),app:parseNum(row[2]),sal:parseNum(row[3]),pay:parseNum(row[7]),ptG:parseNum(row[9])};
+      }
+      for(const row of rows){
+        if(!row[12])continue;
+        const mStr=(row[12]||'').toString().trim().replace('月','');
+        const yr=yrMap[String(parseInt(mStr))];
+        if(!yr)continue;
+        const ym=`${yr}-${String(parseInt(mStr)).padStart(2,'0')}`;
+        const name=(row[13]||'').toString().trim();
+        if(!name)continue;
+        const price=parseNum(row[14]),count=parseNum(row[15]),sales=parseNum(row[16]);
+        if(!itMap[ym])itMap[ym]=[];
+        itMap[ym].push({name,price,count,sales});
+      }
+    }
+  }catch(e){console.error('Gate/Voyage load error:',e);}
+}
 async function initDashboard(){
   await loadData();
+  await fetchGateVoyageData();
   ['dy','mo','it','pt'].forEach(t=>makeSvcRow(t+'-srow',t));
   rdDy();rdMo();rdIT();rdPT();mkOvChart();
 
