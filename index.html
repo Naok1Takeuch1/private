@@ -325,6 +325,8 @@ tr:hover td{background:#F8FAFF}
 </tbody></table>
 </div>
 
+<div class="secl">商品売上 TOP10</div>
+<div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table style="table-layout:fixed"><thead><tr><th style="width:30px;padding-left:10px">#</th><th>商品名</th><th class="r" style="width:90px">販売価格</th><th class="r" style="width:70px">販売数</th><th class="r" style="width:110px">売上</th></tr></thead><tbody id="mo-top10-tb"></tbody></table></div></div>
 <div class="secl">アイテム交換 内訳（月次）</div>
 <div class="card" style="padding:0;overflow:hidden"><div style="padding:20px 22px 14px"><div class="ct" id="mo-ex">アイテム交換 内訳</div></div><div style="overflow-x:auto"><table style="table-layout:fixed"><thead><tr><th>商品名</th><th class="r" style="width:90px">交換数</th><th class="r" style="width:100px">ポイント数</th><th class="r" style="width:130px">消費ポイント</th></tr></thead><tbody id="mo-eb"></tbody></table></div><div class="pinfo" id="mo-ep"></div></div>
 </div>
@@ -757,6 +759,12 @@ function rdMo(){
   if(top.length>0){
     mkChart('mo-ic',top.map(x=>x.name.length>12?x.name.slice(0,12)+'…':x.name),top.map(x=>x.sales),col,true);
   } else {if(charts['mo-ic']){try{charts['mo-ic'].destroy();}catch(e){}}}
+  const top10=items.slice(0,10);
+  const tb10=el('mo-top10-tb');
+  if(tb10){
+    if(top10.length===0){tb10.innerHTML='<tr><td colspan="5" style="text-align:center;color:#888;padding:1rem">データなし</td></tr>';}
+    else{tb10.innerHTML='';top10.forEach((it,i)=>{const tr=document.createElement('tr');const rk=i+1,rc=rk===1?'r1':rk===2?'r2':rk===3?'r3':'';tr.innerHTML='<td style="padding-left:10px"><span class="rnk '+rc+'">'+rk+'</span></td><td style="font-size:10px">'+it.name+'</td><td class="r">'+it.price.toLocaleString()+'円</td><td class="r">'+it.count.toLocaleString()+'</td><td class="r">'+it.sales.toLocaleString()+'円</td>';tb10.appendChild(tr);});}
+  }
   const mob=el('mo-ib');
   if(mob){
     if(items.length===0){mob.innerHTML='<tr><td colspan="4" style="text-align:center;color:#888;padding:1rem">データなし</td></tr>';}
