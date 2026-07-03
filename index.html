@@ -222,7 +222,13 @@ tr:hover td{background:#F8FAFF}
 
 <!-- ===== 統合 ===== -->
 <div id="pane-ov" class="pane">
-<div id="ov-month-title" style="font-size:20px;font-weight:800;margin-bottom:1.25rem;color:var(--text);letter-spacing:-.02em">— サマリーデータ</div>
+<div id="ov-month-title" style="font-size:20px;font-weight:800;margin-bottom:1rem;color:var(--text);letter-spacing:-.02em">— サマリーデータ</div>
+<div class="drow" style="margin-bottom:1.25rem">
+  <label>対象月：</label>
+  <button class="dn" onclick="shOv(-1)">‹</button>
+  <div class="dd" id="ov-dd">—</div>
+  <button class="dn" onclick="shOv(1)">›</button>
+</div>
 <div class="secl">アプリ外決済利用率</div>
 <div class="svc3">
   <div class="scard"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div class="sk">利用率</div><div class="sv2" id="ov-bone-rate">—<span class="su">%</span></div><div style="font-size:10px;color:var(--text3);margin:4px 0 2px;font-weight:500">前月: <span id="ov-bone-prev-rate">—</span></div><div class="bwr"><div class="bfl" id="ov-bone-rate-bar" style="width:0%;background:#378ADD;height:100%;border-radius:3px"></div></div></div>
@@ -440,6 +446,7 @@ function mkChart(id,labels,data,col,horiz){
 function rdOv(){
   const{y,m}=ovYM;
   tx('ov-month-title',(m+1)+'月 サマリーデータ');
+  tx('ov-dd',y+'年'+(m+1)+'月');
   const ym=`${y}-${String(m+1).padStart(2,'0')}`;
   const pym2=m===0?{y:y-1,m:11}:{y:y,m:m-1};
   const pYm=`${pym2.y}-${String(pym2.m+1).padStart(2,'0')}`;
@@ -462,6 +469,13 @@ function rdOv(){
   setCard('ov-voyage-rate','ov-voyage-rate-bar','ov-voyage-prev-rate','ov-voyage-sal','ov-voyage-prev-sal','ov-voyage-reg','ov-voyage-cum-reg',voyageMonthly[ym]||null,voyageMonthly[pYm]||null,voyageCum);
 }
 
+function shOv(n){
+  let{y,m}=ovYM;m+=n;
+  if(m>11){m=0;y++;}if(m<0){m=11;y--;}
+  const today=new Date();const limit=today.getMonth()===0?{y:today.getFullYear()-1,m:11}:{y:today.getFullYear(),m:today.getMonth()-1};
+  if(y>limit.y||(y===limit.y&&m>limit.m))return;
+  ovYM={y,m};rdOv();
+}
 // ======= TOG DETAIL =======
 function tog(key){
   detSt[key]=!detSt[key];
