@@ -487,8 +487,7 @@ function makeSvcRow(rowId,tab){
   updateSvcBtn(cur,{d:dSvc,m:mSvc,i:iSvc,p:pSvc}[cur]);
 }
 function updateSvcBtn(tab,svc){
-  const svcs=(cur==='d'||cur==='p')?['bone']:['bone','gate','voyage'];
-  svcs.forEach(s=>{
+  ['bone','gate','voyage'].forEach(s=>{
     const b=el(tab+'sb-'+s);
     if(!b)return;
     b.className='sb'+(s===svc?' '+s[0]:'');
