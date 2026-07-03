@@ -208,8 +208,8 @@ tr:hover td{background:#F8FAFF}
 
 <div class="wrap">
 <div class="nav-shell">
-  <button class="nb" onclick="go('ov')">📊 統合</button>
-  <button class="nb on" onclick="go('dy')">📅 デイリー</button>
+  <button class="nb on" onclick="go('ov')">📊 統合</button>
+  <button class="nb" onclick="go('dy')">📅 デイリー</button>
   <button class="nb" onclick="go('mo')">📈 月次</button>
   <button class="nb" onclick="go('it')">🛍 商品</button>
   <button class="nb" onclick="go('pt')">💎 ポイント交換</button>
@@ -221,7 +221,7 @@ tr:hover td{background:#F8FAFF}
 </div>
 
 <!-- ===== 統合 ===== -->
-<div id="pane-ov" class="pane">
+<div id="pane-ov" class="pane on">
 <div id="ov-month-title" style="font-size:20px;font-weight:800;margin-bottom:1rem;color:var(--text);letter-spacing:-.02em">— サマリーデータ</div>
 <div class="drow" style="margin-bottom:1.25rem">
   <label>対象月：</label>
@@ -250,7 +250,7 @@ tr:hover td{background:#F8FAFF}
 </div>
 
 <!-- ===== デイリー ===== -->
-<div id="pane-dy" class="pane on">
+<div id="pane-dy" class="pane">
 <div class="srow" id="dy-srow"></div>
 <div class="drow">
   <label>データ日付：</label>
