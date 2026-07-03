@@ -280,10 +280,8 @@ tr:hover td{background:#F8FAFF}
 <tr><td>利用率<span class="cb">計算</span><div style="font-size:9px;color:#888;font-weight:400">売上÷アプリ売上</div></td><td class="r" id="dt5">—</td><td class="r" id="dc5">—</td></tr>
 <tr><td>決済数</td><td class="r" id="dt6">—</td><td class="r" id="dc6">—</td></tr>
 <tr><td>決済単価<span class="cb">計算</span><div style="font-size:9px;color:#888;font-weight:400">売上÷決済数</div></td><td class="r" id="dt7">—</td><td class="r" id="dc7">—</td></tr>
-<tr><td>ポイント付与数</td><td class="r" id="dt8">—</td><td class="r" id="dc8">—</td></tr>
-<tr><td>ポイント消費数</td><td class="r" id="dt9">—</td><td class="r" id="dc9">—</td></tr>
-<tr><td>ポイント失効数</td><td class="r" id="dt10">—</td><td class="r" id="dc10">—</td></tr>
-<tr><td>ポイント使用率<span class="cb">計算</span><div style="font-size:9px;color:#888;font-weight:400">消費数÷付与数</div></td><td class="r" id="dt11">—</td><td class="r" id="dc11">—</td></tr>
+<tr><td>ポイント発行数</td><td class="r" id="dt8">—</td><td class="r" id="dc8">—</td></tr>
+<tr><td>ポイント発行率<span class="cb">計算</span><div style="font-size:9px;color:#888;font-weight:400">発行ポイント÷売り上げ</div></td><td class="r" id="dt11">—</td><td class="r" id="dc11">—</td></tr>
 </tbody></table>
 </div>
 <div class="secl">商品別 売り上げ（月次）</div>
@@ -604,11 +602,11 @@ function rdDy(){
   tx('dt2',nm(tG));
   tx('dt3',yn(td.app));tx('dt4',yn(td.sal));tx('dt5',tR.toFixed(2)+'%');
   tx('dt6',nm(td.pay));tx('dt7',td.pay?Math.round(td.sal/td.pay).toLocaleString()+'円':'—');
-  tx('dt8',nm(td.ptG));tx('dt9',nm(td.ptU));tx('dt10','0');tx('dt11',pc(td.ptU,td.ptG));
+  tx('dt8',nm(td.ptG));tx('dt11',td.sal?((td.ptG/td.sal)*100).toFixed(2)+'%':'—');
   tx('dc2',nm(cE));
   tx('dc3',yn(cA));tx('dc4',yn(cS));tx('dc5',pc(cS,cA));
   tx('dc6',nm(cP));tx('dc7',cP?Math.round(cS/cP).toLocaleString()+'円':'—');
-  tx('dc8',nm(cG));tx('dc9',nm(cU));tx('dc10','0');tx('dc11',pc(cU,cG));
+  tx('dc8',nm(cG));tx('dc11',cS?((cG/cS)*100).toFixed(2)+'%':'—');
 
 
   // 直近30日利用率グラフ
