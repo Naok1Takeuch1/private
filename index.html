@@ -223,23 +223,23 @@ tr:hover td{background:#F8FAFF}
 <!-- ===== 統合 ===== -->
 <div id="pane-ov" class="pane">
 <div id="ov-month-title" style="font-size:20px;font-weight:800;margin-bottom:1.25rem;color:var(--text);letter-spacing:-.02em">— サマリーデータ</div>
-<div class="secl">利用率 — 前月比</div>
+<div class="secl">アプリ外決済利用率</div>
 <div class="svc3">
-  <div class="scard"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div class="sk">利用率</div><div class="sv2" id="ov-bone-rate">—<span class="su">%</span></div><div class="bwr"><div class="bfl" id="ov-bone-rate-bar" style="width:0%;background:#378ADD;height:100%;border-radius:3px"></div></div></div>
-  <div class="scard"><div class="sn"><span class="dot" style="background:#1D9E75"></span>Gate</div><div class="sk">利用率</div><div class="sv2" id="ov-gate-rate">—<span class="su">%</span></div><div class="bwr"><div class="bfl" id="ov-gate-rate-bar" style="width:0%;background:#1D9E75;height:100%;border-radius:3px"></div></div></div>
-  <div class="scard"><div class="sn"><span class="dot" style="background:#7F77DD"></span>Voyage</div><div class="sk">利用率</div><div class="sv2" id="ov-voyage-rate">—<span class="su">%</span></div><div class="bwr"><div class="bfl" id="ov-voyage-rate-bar" style="width:0%;background:#7F77DD;height:100%;border-radius:3px"></div></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div class="sk">利用率</div><div class="sv2" id="ov-bone-rate">—<span class="su">%</span></div><div style="font-size:10px;color:var(--text3);margin:4px 0 2px;font-weight:500">前月: <span id="ov-bone-prev-rate">—</span></div><div class="bwr"><div class="bfl" id="ov-bone-rate-bar" style="width:0%;background:#378ADD;height:100%;border-radius:3px"></div></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#1D9E75"></span>Gate</div><div class="sk">利用率</div><div class="sv2" id="ov-gate-rate">—<span class="su">%</span></div><div style="font-size:10px;color:var(--text3);margin:4px 0 2px;font-weight:500">前月: <span id="ov-gate-prev-rate">—</span></div><div class="bwr"><div class="bfl" id="ov-gate-rate-bar" style="width:0%;background:#1D9E75;height:100%;border-radius:3px"></div></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#7F77DD"></span>Voyage</div><div class="sk">利用率</div><div class="sv2" id="ov-voyage-rate">—<span class="su">%</span></div><div style="font-size:10px;color:var(--text3);margin:4px 0 2px;font-weight:500">前月: <span id="ov-voyage-prev-rate">—</span></div><div class="bwr"><div class="bfl" id="ov-voyage-rate-bar" style="width:0%;background:#7F77DD;height:100%;border-radius:3px"></div></div></div>
 </div>
-<div class="secl">売り上げ — 前月比</div>
+<div class="secl">アプリ外決済売上</div>
 <div class="svc3">
-  <div class="scard"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div class="sk">売り上げ</div><div class="sv2" id="ov-bone-sal" style="font-size:15px">—<span class="su"> 円</span></div></div>
-  <div class="scard"><div class="sn"><span class="dot" style="background:#1D9E75"></span>Gate</div><div class="sk">売り上げ</div><div class="sv2" id="ov-gate-sal" style="font-size:15px">—<span class="su"> 円</span></div></div>
-  <div class="scard"><div class="sn"><span class="dot" style="background:#7F77DD"></span>Voyage</div><div class="sk">売り上げ</div><div class="sv2" id="ov-voyage-sal" style="font-size:15px">—<span class="su"> 円</span></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div class="sk">売り上げ</div><div class="sv2" id="ov-bone-sal" style="font-size:15px">—<span class="su"> 円</span></div><div style="font-size:10px;color:var(--text3);margin-top:6px;font-weight:500">前月: <span id="ov-bone-prev-sal">—</span></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#1D9E75"></span>Gate</div><div class="sk">売り上げ</div><div class="sv2" id="ov-gate-sal" style="font-size:15px">—<span class="su"> 円</span></div><div style="font-size:10px;color:var(--text3);margin-top:6px;font-weight:500">前月: <span id="ov-gate-prev-sal">—</span></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#7F77DD"></span>Voyage</div><div class="sk">売り上げ</div><div class="sv2" id="ov-voyage-sal" style="font-size:15px">—<span class="su"> 円</span></div><div style="font-size:10px;color:var(--text3);margin-top:6px;font-weight:500">前月: <span id="ov-voyage-prev-sal">—</span></div></div>
 </div>
-<div class="secl">登録ユーザー — 当月新規</div>
+<div class="secl">アプリ外決済登録者数</div>
 <div class="svc3">
-  <div class="scard"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div class="sk">今月新規</div><div class="sv2" id="ov-bone-reg">—<span class="su"> 人</span></div></div>
-  <div class="scard"><div class="sn"><span class="dot" style="background:#1D9E75"></span>Gate</div><div class="sk">今月新規</div><div class="sv2" id="ov-gate-reg">—<span class="su"> 人</span></div></div>
-  <div class="scard"><div class="sn"><span class="dot" style="background:#7F77DD"></span>Voyage</div><div class="sk">今月新規</div><div class="sv2" id="ov-voyage-reg">—<span class="su"> 人</span></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div class="sk">今月新規</div><div class="sv2" id="ov-bone-reg">—<span class="su"> 人</span></div><div style="font-size:10px;color:var(--text3);margin-top:6px;font-weight:500">累計: <span id="ov-bone-cum-reg">—</span></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#1D9E75"></span>Gate</div><div class="sk">今月新規</div><div class="sv2" id="ov-gate-reg">—<span class="su"> 人</span></div><div style="font-size:10px;color:var(--text3);margin-top:6px;font-weight:500">累計: <span id="ov-gate-cum-reg">—</span></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#7F77DD"></span>Voyage</div><div class="sk">今月新規</div><div class="sv2" id="ov-voyage-reg">—<span class="su"> 人</span></div><div style="font-size:10px;color:var(--text3);margin-top:6px;font-weight:500">累計: <span id="ov-voyage-cum-reg">—</span></div></div>
 </div>
 </div>
 
@@ -441,16 +441,25 @@ function rdOv(){
   const{y,m}=ovYM;
   tx('ov-month-title',(m+1)+'月 サマリーデータ');
   const ym=`${y}-${String(m+1).padStart(2,'0')}`;
-  const setCard=(rateId,barId,salId,regId,d)=>{
+  const pym2=m===0?{y:y-1,m:11}:{y:y,m:m-1};
+  const pYm=`${pym2.y}-${String(pym2.m+1).padStart(2,'0')}`;
+  const setCard=(rateId,barId,prevRateId,salId,prevSalId,regId,cumRegId,d,pd,cumFn)=>{
     const R=d&&d.app?parseFloat((d.sal/d.app*100).toFixed(2)):null;
+    const pR=pd&&pd.app?parseFloat((pd.sal/pd.app*100).toFixed(2)):null;
     ht(rateId,R!=null?R+'<span class="su">%</span>':'—<span class="su">%</span>');
+    tx(prevRateId,pR!=null?pR+'%':'—');
     ht(salId,d?d.sal.toLocaleString()+'<span class="su"> 円</span>':'—<span class="su"> 円</span>');
+    tx(prevSalId,pd?pd.sal.toLocaleString()+'円':'—');
     ht(regId,d?d.reg.toLocaleString()+'<span class="su"> 人</span>':'—<span class="su"> 人</span>');
+    tx(cumRegId,cumFn?cumFn().toLocaleString()+'人':'—');
     const bar=el(barId);if(bar)bar.style.width=Math.min(R||0,100)+'%';
   };
-  setCard('ov-bone-rate','ov-bone-rate-bar','ov-bone-sal','ov-bone-reg',getM(y,m));
-  setCard('ov-gate-rate','ov-gate-rate-bar','ov-gate-sal','ov-gate-reg',gateMonthly[ym]||null);
-  setCard('ov-voyage-rate','ov-voyage-rate-bar','ov-voyage-sal','ov-voyage-reg',voyageMonthly[ym]||null);
+  const boneCum=()=>Object.values(sheetData).reduce((a,r)=>a+(r.em||0),0);
+  const gateCum=()=>Object.values(gateMonthly).reduce((a,r)=>a+(r.reg||0),0);
+  const voyageCum=()=>Object.values(voyageMonthly).reduce((a,r)=>a+(r.reg||0),0);
+  setCard('ov-bone-rate','ov-bone-rate-bar','ov-bone-prev-rate','ov-bone-sal','ov-bone-prev-sal','ov-bone-reg','ov-bone-cum-reg',getM(y,m),getM(pym2.y,pym2.m),boneCum);
+  setCard('ov-gate-rate','ov-gate-rate-bar','ov-gate-prev-rate','ov-gate-sal','ov-gate-prev-sal','ov-gate-reg','ov-gate-cum-reg',gateMonthly[ym]||null,gateMonthly[pYm]||null,gateCum);
+  setCard('ov-voyage-rate','ov-voyage-rate-bar','ov-voyage-prev-rate','ov-voyage-sal','ov-voyage-prev-sal','ov-voyage-reg','ov-voyage-cum-reg',voyageMonthly[ym]||null,voyageMonthly[pYm]||null,voyageCum);
 }
 
 // ======= TOG DETAIL =======
@@ -466,7 +475,8 @@ function makeSvcRow(rowId,tab){
   const row=el(rowId);if(!row)return;
   const cur={dy:'d',mo:'m',it:'i',pt:'p'}[tab]||tab;
   row.innerHTML='';
-  ['bone','gate','voyage'].forEach(s=>{
+  const svcs=(cur==='d'||cur==='p')?['bone']:['bone','gate','voyage'];
+  svcs.forEach(s=>{
     const b=document.createElement('button');
     b.className='sb';
     b.innerHTML='<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+CLRS[s]+';margin-right:5px;vertical-align:middle"></span>'+NAMES[s];
@@ -477,7 +487,8 @@ function makeSvcRow(rowId,tab){
   updateSvcBtn(cur,{d:dSvc,m:mSvc,i:iSvc,p:pSvc}[cur]);
 }
 function updateSvcBtn(tab,svc){
-  ['bone','gate','voyage'].forEach(s=>{
+  const svcs=(cur==='d'||cur==='p')?['bone']:['bone','gate','voyage'];
+  svcs.forEach(s=>{
     const b=el(tab+'sb-'+s);
     if(!b)return;
     b.className='sb'+(s===svc?' '+s[0]:'');
