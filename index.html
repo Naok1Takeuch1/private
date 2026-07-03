@@ -222,26 +222,25 @@ tr:hover td{background:#F8FAFF}
 
 <!-- ===== 統合 ===== -->
 <div id="pane-ov" class="pane">
-<div class="secl">利用率（当月累計）— 前月比</div>
+<div id="ov-month-title" style="font-size:20px;font-weight:800;margin-bottom:1.25rem;color:var(--text);letter-spacing:-.02em">— サマリーデータ</div>
+<div class="secl">利用率 — 前月比</div>
 <div class="svc3">
-  <div class="scard"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div class="sk">利用率</div><div class="sv2">—<span class="su">%</span></div><div style="margin-top:3px;font-size:10px;color:#888">スプレッドシートからロード中</div><div class="bwr"><div class="bfl" style="width:0%;background:#378ADD"></div></div></div>
-  <div class="scard"><div class="sn"><span class="dot" style="background:#1D9E75"></span>Gate</div><div class="sk">利用率</div><div class="sv2">—<span class="su">%</span></div><div style="margin-top:3px;font-size:10px;color:#888">データ準備中</div><div class="bwr"><div class="bfl" style="width:0%;background:#1D9E75"></div></div></div>
-  <div class="scard"><div class="sn"><span class="dot" style="background:#7F77DD"></span>Voyage</div><div class="sk">利用率</div><div class="sv2">—<span class="su">%</span></div><div style="margin-top:3px;font-size:10px;color:#888">データ準備中</div><div class="bwr"><div class="bfl" style="width:0%;background:#7F77DD"></div></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div class="sk">利用率</div><div class="sv2" id="ov-bone-rate">—<span class="su">%</span></div><div class="bwr"><div class="bfl" id="ov-bone-rate-bar" style="width:0%;background:#378ADD;height:100%;border-radius:3px"></div></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#1D9E75"></span>Gate</div><div class="sk">利用率</div><div class="sv2" id="ov-gate-rate">—<span class="su">%</span></div><div class="bwr"><div class="bfl" id="ov-gate-rate-bar" style="width:0%;background:#1D9E75;height:100%;border-radius:3px"></div></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#7F77DD"></span>Voyage</div><div class="sk">利用率</div><div class="sv2" id="ov-voyage-rate">—<span class="su">%</span></div><div class="bwr"><div class="bfl" id="ov-voyage-rate-bar" style="width:0%;background:#7F77DD;height:100%;border-radius:3px"></div></div></div>
 </div>
-<div class="secl">売り上げ（当月累計）— 前月比</div>
+<div class="secl">売り上げ — 前月比</div>
 <div class="svc3">
-  <div class="scard" id="ov-bone-sal"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div class="sk">売り上げ</div><div class="sv2" style="font-size:15px">—<span class="su"> 円</span></div></div>
-  <div class="scard"><div class="sn"><span class="dot" style="background:#1D9E75"></span>Gate</div><div class="sk">売り上げ</div><div class="sv2" style="font-size:15px">—<span class="su"> 円</span></div><div style="font-size:10px;color:#888;margin-top:3px">データ準備中</div></div>
-  <div class="scard"><div class="sn"><span class="dot" style="background:#7F77DD"></span>Voyage</div><div class="sk">売り上げ</div><div class="sv2" style="font-size:15px">—<span class="su"> 円</span></div><div style="font-size:10px;color:#888;margin-top:3px">データ準備中</div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div class="sk">売り上げ</div><div class="sv2" id="ov-bone-sal" style="font-size:15px">—<span class="su"> 円</span></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#1D9E75"></span>Gate</div><div class="sk">売り上げ</div><div class="sv2" id="ov-gate-sal" style="font-size:15px">—<span class="su"> 円</span></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#7F77DD"></span>Voyage</div><div class="sk">売り上げ</div><div class="sv2" id="ov-voyage-sal" style="font-size:15px">—<span class="su"> 円</span></div></div>
 </div>
-<div class="secl">登録ユーザー（当月新規 / サービス累計）</div>
+<div class="secl">登録ユーザー — 当月新規</div>
 <div class="svc3">
-  <div class="scard" id="ov-bone-reg"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div class="sk">今月新規</div><div class="sv2">—<span class="su"> 人</span></div></div>
-  <div class="scard"><div class="sn"><span class="dot" style="background:#1D9E75"></span>Gate</div><div class="sk">今月新規</div><div class="sv2">—<span class="su"> 人</span></div><div style="font-size:10px;color:#888;margin-top:3px">データ準備中</div></div>
-  <div class="scard"><div class="sn"><span class="dot" style="background:#7F77DD"></span>Voyage</div><div class="sk">今月新規</div><div class="sv2">—<span class="su"> 人</span></div><div style="font-size:10px;color:#888;margin-top:3px">データ準備中</div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div class="sk">今月新規</div><div class="sv2" id="ov-bone-reg">—<span class="su"> 人</span></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#1D9E75"></span>Gate</div><div class="sk">今月新規</div><div class="sv2" id="ov-gate-reg">—<span class="su"> 人</span></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#7F77DD"></span>Voyage</div><div class="sk">今月新規</div><div class="sv2" id="ov-voyage-reg">—<span class="su"> 人</span></div></div>
 </div>
-<div class="secl">利用率 月次推移 — bone</div>
-<div class="card"><div style="position:relative;width:100%;height:200px"><canvas id="ov-c"></canvas></div></div>
 </div>
 
 <!-- ===== デイリー ===== -->
@@ -379,6 +378,7 @@ const NAMES={bone:'bone',gate:'Gate',voyage:'Voyage'};
 let LAT=new Date();
 let MLAT={y:LAT.getFullYear(),m:LAT.getMonth()};
 let dSvc='bone',mSvc='bone',iSvc='bone',pSvc='bone';
+let ovYM={y:0,m:0};
 let dDate=(()=>{const d=new Date();d.setDate(d.getDate()-1);return d;})();
 let mYM={...MLAT};
 let iPer='6m',pPer='6m';
@@ -437,26 +437,20 @@ function mkChart(id,labels,data,col,horiz){
     }
   });
 }
-function mkOvChart(){
-  if(charts['ov-c']){try{charts['ov-c'].destroy();}catch(e){}}
-  const cv=el('ov-c');if(!cv)return;
-  // Build monthly utilization rate from sheetData
-  const labels=[],vals=[];
-  for(let i=5;i>=0;i--){
-    const nd=new Date(MLAT.y,MLAT.m-i,1);
-    const y=nd.getFullYear(),m=nd.getMonth();
-    labels.push(y+'/'+(m+1));
-    const md=getM(y,m);
-    vals.push(md&&md.app?parseFloat((md.sal/md.app*100).toFixed(2)):null);
-  }
-  charts['ov-c']=new Chart(cv,{
-    type:'line',
-    data:{labels,datasets:[
-      {label:'bone',data:vals,borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.07)',tension:0.35,pointRadius:3,fill:true,spanGaps:true},
-      {label:'目標',data:Array(6).fill(50),borderColor:'rgba(150,150,150,0.4)',borderDash:[4,4],pointRadius:0,fill:false,borderWidth:1}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(128,128,128,0.1)'},ticks:{font:{size:10},color:'#888'}},y:{grid:{color:'rgba(128,128,128,0.1)'},ticks:{font:{size:10},color:'#888',callback:v=>v+'%'},min:0,max:60}}}
-  });
+function rdOv(){
+  const{y,m}=ovYM;
+  tx('ov-month-title',(m+1)+'月 サマリーデータ');
+  const ym=`${y}-${String(m+1).padStart(2,'0')}`;
+  const setCard=(rateId,barId,salId,regId,d)=>{
+    const R=d&&d.app?parseFloat((d.sal/d.app*100).toFixed(2)):null;
+    ht(rateId,R!=null?R+'<span class="su">%</span>':'—<span class="su">%</span>');
+    ht(salId,d?d.sal.toLocaleString()+'<span class="su"> 円</span>':'—<span class="su"> 円</span>');
+    ht(regId,d?d.reg.toLocaleString()+'<span class="su"> 人</span>':'—<span class="su"> 人</span>');
+    const bar=el(barId);if(bar)bar.style.width=Math.min(R||0,100)+'%';
+  };
+  setCard('ov-bone-rate','ov-bone-rate-bar','ov-bone-sal','ov-bone-reg',getM(y,m));
+  setCard('ov-gate-rate','ov-gate-rate-bar','ov-gate-sal','ov-gate-reg',gateMonthly[ym]||null);
+  setCard('ov-voyage-rate','ov-voyage-rate-bar','ov-voyage-sal','ov-voyage-reg',voyageMonthly[ym]||null);
 }
 
 // ======= TOG DETAIL =======
@@ -509,7 +503,7 @@ function go(id){
   document.querySelectorAll('.nb').forEach((b,i)=>{
     b.classList.toggle('on',['ov','dy','mo','it','pt'][i]===id);
   });
-  if(id==='ov')mkOvChart();
+  if(id==='ov')rdOv();
   if(id==='dy')rdDy();
   if(id==='mo')rdMo();
   if(id==='it')rdIT();
@@ -1054,8 +1048,10 @@ async function fetchGateVoyageData(){
 async function initDashboard(){
   await loadData();
   await fetchGateVoyageData();
+  const _t=new Date();
+  ovYM=_t.getMonth()===0?{y:_t.getFullYear()-1,m:11}:{y:_t.getFullYear(),m:_t.getMonth()-1};
   ['dy','mo','it','pt'].forEach(t=>makeSvcRow(t+'-srow',t));
-  rdDy();rdMo();rdIT();rdPT();mkOvChart();
+  rdDy();rdMo();rdIT();rdPT();rdOv();
 
   // 統合タブ: boneの当月データを更新
   const cm=getM(MLAT.y,MLAT.m);
