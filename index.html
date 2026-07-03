@@ -231,9 +231,9 @@ tr:hover td{background:#F8FAFF}
 </div>
 <div class="secl">アプリ外決済利用率</div>
 <div class="svc3">
-  <div class="scard"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div class="sk">利用率</div><div class="sv2" id="ov-bone-rate">—<span class="su">%</span></div><div style="font-size:10px;color:var(--text3);margin:4px 0 2px;font-weight:500">前月: <span id="ov-bone-prev-rate">—</span></div><div class="bwr"><div class="bfl" id="ov-bone-rate-bar" style="width:0%;background:#378ADD;height:100%;border-radius:3px"></div></div></div>
-  <div class="scard"><div class="sn"><span class="dot" style="background:#1D9E75"></span>Gate</div><div class="sk">利用率</div><div class="sv2" id="ov-gate-rate">—<span class="su">%</span></div><div style="font-size:10px;color:var(--text3);margin:4px 0 2px;font-weight:500">前月: <span id="ov-gate-prev-rate">—</span></div><div class="bwr"><div class="bfl" id="ov-gate-rate-bar" style="width:0%;background:#1D9E75;height:100%;border-radius:3px"></div></div></div>
-  <div class="scard"><div class="sn"><span class="dot" style="background:#7F77DD"></span>Voyage</div><div class="sk">利用率</div><div class="sv2" id="ov-voyage-rate">—<span class="su">%</span></div><div style="font-size:10px;color:var(--text3);margin:4px 0 2px;font-weight:500">前月: <span id="ov-voyage-prev-rate">—</span></div><div class="bwr"><div class="bfl" id="ov-voyage-rate-bar" style="width:0%;background:#7F77DD;height:100%;border-radius:3px"></div></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#378ADD"></span>bone</div><div style="display:flex;align-items:center;gap:14px;margin-top:6px"><div style="position:relative;width:80px;height:80px;flex-shrink:0"><canvas id="ov-bone-rate-chart" width="80" height="80"></canvas><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span id="ov-bone-rate" style="font-size:13px;font-weight:800;color:var(--text)">—</span><span style="font-size:9px;color:var(--text3)">利用率</span></div></div><div><div style="font-size:10px;color:var(--text3);font-weight:500">前月:<br><span id="ov-bone-prev-rate" style="font-size:12px;font-weight:700;color:var(--text2)">—</span></div></div></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#1D9E75"></span>Gate</div><div style="display:flex;align-items:center;gap:14px;margin-top:6px"><div style="position:relative;width:80px;height:80px;flex-shrink:0"><canvas id="ov-gate-rate-chart" width="80" height="80"></canvas><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span id="ov-gate-rate" style="font-size:13px;font-weight:800;color:var(--text)">—</span><span style="font-size:9px;color:var(--text3)">利用率</span></div></div><div><div style="font-size:10px;color:var(--text3);font-weight:500">前月:<br><span id="ov-gate-prev-rate" style="font-size:12px;font-weight:700;color:var(--text2)">—</span></div></div></div></div>
+  <div class="scard"><div class="sn"><span class="dot" style="background:#7F77DD"></span>Voyage</div><div style="display:flex;align-items:center;gap:14px;margin-top:6px"><div style="position:relative;width:80px;height:80px;flex-shrink:0"><canvas id="ov-voyage-rate-chart" width="80" height="80"></canvas><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span id="ov-voyage-rate" style="font-size:13px;font-weight:800;color:var(--text)">—</span><span style="font-size:9px;color:var(--text3)">利用率</span></div></div><div><div style="font-size:10px;color:var(--text3);font-weight:500">前月:<br><span id="ov-voyage-prev-rate" style="font-size:12px;font-weight:700;color:var(--text2)">—</span></div></div></div></div>
 </div>
 <div class="secl">アプリ外決済売上</div>
 <div class="svc3">
@@ -428,6 +428,16 @@ function wbar(ic,ip,vc,vp,max,col,fvc,fvp,ivc,ivp){
 }
 
 // ======= CHART =======
+function mkRateChart(id,rate,col){
+  if(charts[id]){try{charts[id].destroy();}catch(e){}}
+  const cv=el(id);if(!cv)return;
+  const r=Math.max(0,Math.min(100,rate||0));
+  charts[id]=new Chart(cv,{
+    type:'doughnut',
+    data:{datasets:[{data:[r,100-r],backgroundColor:[col,'rgba(180,180,180,0.15)'],borderWidth:0}]},
+    options:{responsive:false,animation:{duration:500},plugins:{legend:{display:false},tooltip:{enabled:false}},cutout:'72%'}
+  });
+}
 function mkChart(id,labels,data,col,horiz){
   if(charts[id]){try{charts[id].destroy();}catch(e){}}
   const cv=el(id);if(!cv)return;
@@ -452,23 +462,23 @@ function rdOv(){
   const ym=`${y}-${String(m+1).padStart(2,'0')}`;
   const pym2=m===0?{y:y-1,m:11}:{y:y,m:m-1};
   const pYm=`${pym2.y}-${String(pym2.m+1).padStart(2,'0')}`;
-  const setCard=(rateId,barId,prevRateId,salId,prevSalId,regId,cumRegId,d,pd,cumFn)=>{
-    const R=d&&d.app?parseFloat((d.sal/d.app*100).toFixed(2)):null;
-    const pR=pd&&pd.app?parseFloat((pd.sal/pd.app*100).toFixed(2)):null;
-    ht(rateId,R!=null?R+'<span class="su">%</span>':'—<span class="su">%</span>');
+  const setCard=(rateId,chartId,prevRateId,salId,prevSalId,regId,cumRegId,d,pd,cumFn,col)=>{
+    const R=d&&d.app?parseFloat((d.sal/d.app*100).toFixed(1)):null;
+    const pR=pd&&pd.app?parseFloat((pd.sal/pd.app*100).toFixed(1)):null;
+    tx(rateId,R!=null?R+'%':'—');
     tx(prevRateId,pR!=null?pR+'%':'—');
     ht(salId,d?d.sal.toLocaleString()+'<span class="su"> 円</span>':'—<span class="su"> 円</span>');
     tx(prevSalId,pd?pd.sal.toLocaleString()+'円':'—');
     ht(regId,d?d.reg.toLocaleString()+'<span class="su"> 人</span>':'—<span class="su"> 人</span>');
     tx(cumRegId,cumFn?cumFn().toLocaleString()+'人':'—');
-    const bar=el(barId);if(bar)bar.style.width=Math.min(R||0,100)+'%';
+    mkRateChart(chartId,R,col);
   };
   const boneCum=()=>Object.values(sheetData).reduce((a,r)=>a+(r.em||0),0);
   const gateCum=()=>Object.values(gateMonthly).reduce((a,r)=>a+(r.reg||0),0);
   const voyageCum=()=>Object.values(voyageMonthly).reduce((a,r)=>a+(r.reg||0),0);
-  setCard('ov-bone-rate','ov-bone-rate-bar','ov-bone-prev-rate','ov-bone-sal','ov-bone-prev-sal','ov-bone-reg','ov-bone-cum-reg',getM(y,m),getM(pym2.y,pym2.m),boneCum);
-  setCard('ov-gate-rate','ov-gate-rate-bar','ov-gate-prev-rate','ov-gate-sal','ov-gate-prev-sal','ov-gate-reg','ov-gate-cum-reg',gateMonthly[ym]||null,gateMonthly[pYm]||null,gateCum);
-  setCard('ov-voyage-rate','ov-voyage-rate-bar','ov-voyage-prev-rate','ov-voyage-sal','ov-voyage-prev-sal','ov-voyage-reg','ov-voyage-cum-reg',voyageMonthly[ym]||null,voyageMonthly[pYm]||null,voyageCum);
+  setCard('ov-bone-rate','ov-bone-rate-chart','ov-bone-prev-rate','ov-bone-sal','ov-bone-prev-sal','ov-bone-reg','ov-bone-cum-reg',getM(y,m),getM(pym2.y,pym2.m),boneCum,'#378ADD');
+  setCard('ov-gate-rate','ov-gate-rate-chart','ov-gate-prev-rate','ov-gate-sal','ov-gate-prev-sal','ov-gate-reg','ov-gate-cum-reg',gateMonthly[ym]||null,gateMonthly[pYm]||null,gateCum,'#1D9E75');
+  setCard('ov-voyage-rate','ov-voyage-rate-chart','ov-voyage-prev-rate','ov-voyage-sal','ov-voyage-prev-sal','ov-voyage-reg','ov-voyage-cum-reg',voyageMonthly[ym]||null,voyageMonthly[pYm]||null,voyageCum,'#7F77DD');
 }
 
 function shOv(n){
