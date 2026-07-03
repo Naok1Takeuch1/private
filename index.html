@@ -321,10 +321,8 @@ tr:hover td{background:#F8FAFF}
 <tr><td>利用率<span class="cb">計算</span></td><td class="r" id="mt5">—</td><td class="r" id="mp5">—</td></tr>
 <tr><td>決済数</td><td class="r" id="mt6">—</td><td class="r" id="mp6">—</td></tr>
 <tr><td>決済単価<span class="cb">計算</span></td><td class="r" id="mt7">—</td><td class="r" id="mp7">—</td></tr>
-<tr><td>ポイント付与数</td><td class="r" id="mt8">—</td><td class="r" id="mp8">—</td></tr>
-<tr><td>ポイント消費数</td><td class="r" id="mt9">—</td><td class="r" id="mp9">—</td></tr>
-<tr><td>ポイント失効数</td><td class="r" id="mt10">—</td><td class="r" id="mp10">—</td></tr>
-<tr><td>ポイント使用率<span class="cb">計算</span></td><td class="r" id="mt11">—</td><td class="r" id="mp11">—</td></tr>
+<tr><td>ポイント発行数</td><td class="r" id="mt8">—</td><td class="r" id="mp8">—</td></tr>
+<tr><td>ポイント発行率<span class="cb">計算</span><div style="font-size:9px;color:#888;font-weight:400">発行ポイント÷売り上げ</div></td><td class="r" id="mt11">—</td><td class="r" id="mp11">—</td></tr>
 </tbody></table>
 </div>
 <div class="secl">商品別 売り上げ（月次）</div>
@@ -737,12 +735,12 @@ function rdMo(){
   tx('mt2',nm(cur.reg));
   tx('mt3',yn(cur.app));tx('mt4',yn(cur.sal));tx('mt5',pc(cur.sal,cur.app));
   tx('mt6',nm(cur.pay));tx('mt7',cur.pay?Math.round(cur.sal/cur.pay).toLocaleString()+'円':'—');
-  tx('mt8',nm(cur.ptG));tx('mt9',nm(cur.ptU));tx('mt10','0');tx('mt11',pc(cur.ptU,cur.ptG));
+  tx('mt8',nm(cur.ptG));tx('mt11',cur.sal?((cur.ptG/cur.sal)*100).toFixed(2)+'%':'—');
   if(prv){
     tx('mp2',nm(prv.reg));
     tx('mp3',yn(prv.app));tx('mp4',yn(prv.sal));tx('mp5',pc(prv.sal,prv.app));
     tx('mp6',nm(prv.pay));tx('mp7',prv.pay?Math.round(prv.sal/prv.pay).toLocaleString()+'円':'—');
-    tx('mp8',nm(prv.ptG));tx('mp9',nm(prv.ptU));tx('mp10','0');tx('mp11',pc(prv.ptU,prv.ptG));
+    tx('mp8',nm(prv.ptG));tx('mp11',prv.sal?((prv.ptG/prv.sal)*100).toFixed(2)+'%':'—');
   } else {tx('mp2','—');for(var i=3;i<=11;i++)tx('mp'+i,'—');}
 
   const ym=`${y}-${String(m+1).padStart(2,'0')}`;
