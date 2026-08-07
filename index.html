@@ -383,7 +383,7 @@ tr:hover td{background:#F8FAFF}
 <script>
 // ======= GOOGLE SHEETS CONFIG =======
 const CLIENT_ID = '572507655510-5bb4p4gbove96uo3odk51h6simk75k2g.apps.googleusercontent.com';
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+const SCOPES = 'openid email profile https://www.googleapis.com/auth/spreadsheets.readonly';
 const SPREADSHEET_ID = '1qCt6QTT-TZq9nkCSru_1_HPYTtaco1FAmLejl37jm3A';
 
 // ======= STATE =======
@@ -716,7 +716,7 @@ async function getCwMap(){
   if(!cwMsgsPromise){
     cwMsgsPromise=(async()=>{
       try{
-        const r=await fetch('/api/chatwork');
+        const r=await fetch('/api/chatwork',{headers:{Authorization:'Bearer '+accessToken}});
         const j=await r.json().catch(()=>null);
         if(!r.ok)return{map:null,status:(j&&j.error)?j.error:`取得に失敗（HTTP ${r.status}）`};
         const map=(j&&j.map)||{};
