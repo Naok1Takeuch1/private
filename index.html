@@ -712,23 +712,25 @@ function rdDy(){
 }
 // サーバー側(/api/chatwork)経由でChatwork日次レポートを取得。トークンはVercel環境変数で管理
 async function getCwMap(){
-  if(cwMsgsPromise)return cwMsgsPromise;
-  cwMsgsPromise=(async()=>{
-    try{
-      const r=await fetch('/api/chatwork');
-      const j=await r.json().catch(()=>null);
-      if(!r.ok){cwStatus=(j&&j.error)?j.error:`取得に失敗（HTTP ${r.status}）`;return null;}
-      const map=(j&&j.map)||{};
-      const keys=Object.keys(map).sort();
-      if(!keys.length){cwStatus='商品データを含む投稿が見つかりません';return null;}
-      cwStatus=`取得済み：${keys.length}日分（${keys[0]}〜${keys[keys.length-1]}）`;
-      return map;
-    }catch(e){
-      cwStatus='レポート取得APIへの接続に失敗しました';
-      return null;
-    }
-  })();
-  return cwMsgsPromise;
+  // 結果とステータスを一緒にキャッシュする（2回目以降もステータスを復元するため）
+  if(!cwMsgsPromise){
+    cwMsgsPromise=(async()=>{
+      try{
+        const r=await fetch('/api/chatwork');
+        const j=await r.json().catch(()=>null);
+        if(!r.ok)return{map:null,status:(j&&j.error)?j.error:`取得に失敗（HTTP ${r.status}）`};
+        const map=(j&&j.map)||{};
+        const keys=Object.keys(map).sort();
+        if(!keys.length)return{map:null,status:'商品データを含む投稿が見つかりません'};
+        return{map,status:`取得済み：${keys.length}日分（${keys[0]}〜${keys[keys.length-1]}）`};
+      }catch(e){
+        return{map:null,status:'レポート取得APIへの接続に失敗：'+String((e&&e.message)||e)};
+      }
+    })();
+  }
+  const res=await cwMsgsPromise;
+  cwStatus=res.status;
+  return res.map;
 }
 async function fetchCwItems(d){
   const map=await getCwMap();
