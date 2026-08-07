@@ -739,24 +739,28 @@ async function fetchCwItems(d){
 }
 function genAnalysis(d,rates30,cwToday,cwYest,cwWeek){
   const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const H=t=>`<div style="font-weight:700;color:var(--text);margin-top:8px">${t}</div>`;
-  const L=t=>`<div>${t}</div>`;
+  const H=t=>`<div style="font-weight:700;color:var(--text);margin-top:10px;margin-bottom:2px">${t}</div>`;
+  const P=t=>`<div>${t}</div>`;
   const RISE=1.5, FALL=0.5;   // 前日比の急上昇/急下降しきい値（150% / 50%）
   const valid=rates30.filter(v=>v!=null);
   if(valid.length<7)return '<span style="color:var(--text3)">分析に必要なデータが不足しています。</span>';
   const avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
+  let html='';
+
   // ---- 利用率 ----
-  const r30=valid, r7=rates30.slice(-7).filter(v=>v!=null), rPrev7=rates30.slice(-14,-7).filter(v=>v!=null);
-  const avg30=avg(r30), max30=Math.max(...r30), min30=Math.min(...r30);
+  const r7=rates30.slice(-7).filter(v=>v!=null), rPrev7=rates30.slice(-14,-7).filter(v=>v!=null);
+  const avg30=avg(valid), max30=Math.max(...valid), min30=Math.min(...valid);
   const avg7=avg(r7), max7=Math.max(...r7), min7=Math.min(...r7);
   const avgPrev7=rPrev7.length?avg(rPrev7):avg7;
   const d7=avg7-avgPrev7;
-  const rateTrend=d7>1?'上昇':d7<-1?'下降':'横ばい';
-  const rateNote=Math.abs(d7)>1?`前週比${d7>=0?'+':''}${d7.toFixed(1)}pt`:'前週から大きな変化なし';
-  let html='';
+  const rateSentence=d7>1
+    ? `前週比+${d7.toFixed(1)}ptと上昇傾向にあります`
+    : d7<-1
+    ? `前週比${d7.toFixed(1)}ptと下降傾向にあります`
+    : '前週から大きな変化はなく、横ばいで推移しています';
   html+=H('【利用率】');
-  html+=L(`直近30日平均 <b>${avg30.toFixed(1)}%</b>（最高 ${max30.toFixed(1)}% / 最低 ${min30.toFixed(1)}%）`);
-  html+=L(`直近7日平均 <b>${avg7.toFixed(1)}%</b>（最高 ${max7.toFixed(1)}% / 最低 ${min7.toFixed(1)}%） — <b>${rateTrend}</b>（${rateNote}）`);
+  html+=P(`直近30日の平均利用率は<b>${avg30.toFixed(1)}%</b>（最高${max30.toFixed(1)}%・最低${min30.toFixed(1)}%）で推移しています。直近7日では平均<b>${avg7.toFixed(1)}%</b>（最高${max7.toFixed(1)}%・最低${min7.toFixed(1)}%）となり、${rateSentence}。`);
+
   // ---- アイテムの販売傾向 ----
   html+=H('【アイテムの販売傾向】');
   const baseN=name=>name.replace(/[\s　]*[×xX×]\s*\d+\s*$/,'').trim();
@@ -770,40 +774,55 @@ function genAnalysis(d,rates30,cwToday,cwYest,cwWeek){
     return Object.values(m);
   };
   if(!cwToday||!cwToday.length){
-    const why=cwStatus?(cwStatus.startsWith('取得済み')?`この日のレポート投稿が見つかりません（${cwStatus}）`:cwStatus):'対象日のデータがありません';
-    html+=L(`<span style="color:var(--text3)">${esc(why)}</span>`);
+    const why=cwStatus?(cwStatus.startsWith('取得済み')?`この日のレポート投稿が見つかりませんでした（${cwStatus}）`:cwStatus):'対象日のデータがありません';
+    html+=P(`<span style="color:var(--text3)">${esc(why)}。</span>`);
   }else{
     const today=grp(cwToday).sort((a,b)=>b.sales-a.sales);
     const yMap={};grp(cwYest||[]).forEach(x=>{yMap[x.name]=x;});
     const wMap={};grp(cwWeek||[]).forEach(x=>{wMap[x.name]=x;});
-    const fmt=x=>`「${esc(x.name)}」${x.sales.toLocaleString()}円（${x.count}件）`;
+    const nf=x=>`「${esc(x.name)}」（${x.sales.toLocaleString()}円・${x.count}件）`;
+    const rf=x=>`「${esc(x.name)}」（${x.sales.toLocaleString()}円／前日比${Math.round(x.ratio*100)}%）`;
+    const join=a=>a.length>1?a.slice(0,-1).join('、')+'と'+a[a.length-1]:a[0];
+    const sentences=[];
     // 新規追加: 過去7日間に販売実績なし
     const newItems=today.filter(x=>!wMap[x.name]).sort((a,b)=>b.sales-a.sales);
-    html+=L(newItems.length
-      ? `新規追加：${newItems.slice(0,3).map(fmt).join('、')}${newItems.length>3?` ほか${newItems.length-3}件`:''}`
-      : '<span style="color:var(--text3)">新規追加：なし</span>');
-    // 前日比の急変（新規追加は除外）
+    if(newItems.length){
+      const shown=newItems.slice(0,3), rest=newItems.length-shown.length;
+      const total=newItems.reduce((s,x)=>s+x.sales,0);
+      sentences.push(`過去7日間に販売実績のなかったアイテムとして${join(shown.map(nf))}${rest>0?`ほか${rest}件`:''}が新たに売れており、${newItems.length>1?`合計${total.toLocaleString()}円の売上となっています`:'売上に寄与しています'}。`);
+    }else{
+      sentences.push('過去7日間に販売実績のなかった新規アイテムはありませんでした。');
+    }
+    // 前日比の急変（新規追加は対象外）
     const withRatio=today.filter(x=>wMap[x.name]&&yMap[x.name]&&yMap[x.name].sales>0)
       .map(x=>({...x,ratio:x.sales/yMap[x.name].sales}));
-    const up=withRatio.filter(x=>x.ratio>=RISE).sort((a,b)=>b.ratio-a.ratio);
-    const down=withRatio.filter(x=>x.ratio<=FALL).sort((a,b)=>a.ratio-b.ratio);
-    const rf=x=>`「${esc(x.name)}」${x.sales.toLocaleString()}円（前日比 ${Math.round(x.ratio*100)}%）`;
-    html+=L(up.length
-      ? `売上急上昇：${up.slice(0,3).map(rf).join('、')}`
-      : '<span style="color:var(--text3)">売上急上昇：なし</span>');
-    html+=L(down.length
-      ? `売上急下降：${down.slice(0,3).map(rf).join('、')}`
-      : '<span style="color:var(--text3)">売上急下降：なし</span>');
+    const up=withRatio.filter(x=>x.ratio>=RISE).sort((a,b)=>b.ratio-a.ratio).slice(0,3);
+    const down=withRatio.filter(x=>x.ratio<=FALL).sort((a,b)=>a.ratio-b.ratio).slice(0,3);
+    if(up.length&&down.length){
+      sentences.push(`既存アイテムでは${join(up.map(rf))}が大きく伸びた一方、${join(down.map(rf))}は落ち込みました。`);
+    }else if(up.length){
+      sentences.push(`既存アイテムでは${join(up.map(rf))}が大きく伸びています。`);
+    }else if(down.length){
+      sentences.push(`既存アイテムでは${join(down.map(rf))}が落ち込んでいます。`);
+    }else{
+      sentences.push('前日と比べて売上が大きく動いたアイテムはありませんでした。');
+    }
+    html+=P(sentences.join(''));
   }
+
   // ---- 登録者数 ----
   const regs=[];for(let gi=29;gi>=0;gi--){const gd=aD(d,-gi);const gr=getD(gd);regs.push(gr?gr.em:null);}
   const g7=regs.slice(-7).filter(v=>v!=null), gPrev7=regs.slice(-14,-7).filter(v=>v!=null);
   const gAvg7=g7.length?avg(g7):0;
   const gAvgPrev7=gPrev7.length?avg(gPrev7):gAvg7;
   const gd7=gAvg7-gAvgPrev7;
-  const gTrend=gd7>0.5?'増加':gd7<-0.5?'減少':'横ばい';
+  const gSentence=gd7>0.5
+    ? `前週比+${gd7.toFixed(0)}人の増加傾向です`
+    : gd7<-0.5
+    ? `前週比${gd7.toFixed(0)}人の減少傾向です`
+    : '前週から大きな変化はありません';
   html+=H('【登録者数】');
-  html+=L(`直近7日平均 <b>${gAvg7.toFixed(0)}人</b> — <b>${gTrend}</b>（前週比${gd7>=0?'+':''}${gd7.toFixed(0)}人）`);
+  html+=P(`直近7日の1日あたり平均登録者数は<b>${gAvg7.toFixed(0)}人</b>で、${gSentence}。`);
   return html;
 }
 function shD(n){const nx=aD(dDate,n);if(nx>LAT)return;dDate=nx;rdDy();}
