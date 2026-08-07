@@ -271,6 +271,22 @@ tr:hover td{background:#F8FAFF}
 <div class="ct" style="margin-bottom:10px">直近30日 利用率推移</div>
 <div style="position:relative;height:160px"><canvas id="dy-rate30c"></canvas></div>
 </div>
+<div class="card" style="margin-bottom:14px" id="dy-analysis-card">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+  <div class="ct" style="margin:0">傾向分析</div>
+  <button onclick="toggleCwSetting()" style="font-size:10px;padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text3);cursor:pointer">Chatwork設定</button>
+</div>
+<div id="dy-cw-setting" style="display:none;margin-bottom:10px;padding:8px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)">
+  <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Chatwork APIトークン</div>
+  <div style="display:flex;gap:6px">
+    <input id="dy-cw-token" type="password" placeholder="APIトークンを入力" style="flex:1;font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text)">
+    <button onclick="saveCwToken()" style="font-size:11px;padding:4px 10px;border:none;border-radius:4px;background:var(--accent);color:#fff;cursor:pointer">保存</button>
+  </div>
+</div>
+<div id="dy-analysis" style="font-size:12px;line-height:1.8;color:var(--text2);min-height:60px">
+  <span style="color:var(--text3)">データ読み込み中…</span>
+</div>
+</div>
 <div class="card">
 <div class="ct" id="dy-tt">日次 vs 月次累計</div>
 <table><thead><tr><th style="width:44%">指標</th><th class="r" style="width:26%">日次</th><th class="r" style="width:30%">月次累計（〜当日）</th></tr></thead>
@@ -394,6 +410,7 @@ let iSrt='sales',iDr={sales:'desc',count:'desc',price:'desc'};
 let pSrt='consumed',pDr={consumed:'desc',count:'desc',pt:'desc'};
 let iData=[],pData=[];
 let sheetData={},itemsByMonth={},exchangeByMonth={};
+let cwItemCache={};
 let gateMonthly={},voyageMonthly={},gateItems={},voyageItems={};
 const GV_SS_ID='1aMT3kouMohaoOnIb8KcxzJCW-QsjjnuSC2hkc1cwZZc';
 let accessToken=null,tokenClient=null;
@@ -683,6 +700,77 @@ function rdDy(){
   }
   if(charts['dy-ec']){try{charts['dy-ec'].destroy();}catch(e){}}
   const eb=el('dy-eb');if(eb)eb.innerHTML='<tr><td colspan="4" style="text-align:center;color:#888;padding:1rem">データなし</td></tr>';
+  (async function(){
+    const aEl=el('dy-analysis');if(!aEl)return;
+    aEl.innerHTML='<span style="color:var(--text3)">分析中…</span>';
+    const r30=[];for(let gi=29;gi>=0;gi--){const gd=aD(d,-gi);const gr=getD(gd);r30.push(gr&&gr.app?parseFloat((gr.sal/gr.app*100).toFixed(2)):null);}
+    const [y2,m2]=dK(d).split('-').map(Number);
+    const isAfterAug=(y2>2026||(y2===2026&&m2>=8));
+    const cwItems=isAfterAug?await fetchCwItems(d):null;
+    const text=genAnalysis(d,r30,cwItems);
+    aEl.textContent=text;
+  })();
+}
+function toggleCwSetting(){const s=el('dy-cw-setting');if(s){s.style.display=s.style.display==='none'?'block':'none';if(s.style.display==='block'){const t=localStorage.getItem('cw_token')||'';const inp=el('dy-cw-token');if(inp)inp.value=t;}}}
+function saveCwToken(){const inp=el('dy-cw-token');if(!inp)return;const v=inp.value.trim();if(v){localStorage.setItem('cw_token',v);el('dy-cw-setting').style.display='none';rdDy();}else{alert('トークンを入力してください');}}
+async function fetchCwItems(d){
+  const token=localStorage.getItem('cw_token');
+  if(!token)return null;
+  const today=dK(d);
+  if(cwItemCache[today]!==undefined)return cwItemCache[today];
+  try{
+    let roomId=localStorage.getItem('cw_bone_room_id');
+    if(!roomId){
+      const r=await fetch('https://api.chatwork.com/v2/rooms',{headers:{'X-ChatWorkToken':token}});
+      if(!r.ok){cwItemCache[today]=null;return null;}
+      const rooms=await r.json();
+      const room=rooms.find(x=>x.name&&x.name.includes('Bone日次'));
+      if(!room){cwItemCache[today]=null;return null;}
+      roomId=String(room.room_id);
+      localStorage.setItem('cw_bone_room_id',roomId);
+    }
+    const mr=await fetch(`https://api.chatwork.com/v2/rooms/${roomId}/messages?force=1`,{headers:{'X-ChatWorkToken':token}});
+    if(!mr.ok){cwItemCache[today]=null;return null;}
+    const msgs=await mr.json();
+    const [ty,tm,tdd]=dK(d).split('-').map(Number);
+    const label=`${tm}月${tdd}日`;
+    let targetMsg=null;
+    for(const msg of msgs){const body=msg.body||'';if(body.includes(label)&&body.includes('アイテム')){targetMsg=body;break;}}
+    if(!targetMsg){cwItemCache[today]=null;return null;}
+    const items=[];const lines=targetMsg.split('\n');let inItems=false;
+    for(const line of lines){
+      if(line.includes('アイテム')||line.includes('商品')||line.includes('決済数')){inItems=true;}
+      if(!inItems)continue;
+      const mCount=line.match(/決済数[：:]\s*(\d+)/);
+      const mSales=line.match(/売上[：:]\s*([\d,]+)/);
+      const mPt=line.match(/ポイント[：:]\s*([\d,]+)/);
+      if(mCount||mSales){const namePart=line.replace(/決済数.*$/,'').replace(/[：:\s]/g,'').trim();items.push({name:namePart||'不明',count:mCount?parseInt(mCount[1]):0,sales:mSales?parseInt(mSales[1].replace(/,/g,'')):0,pt:mPt?parseInt(mPt[1].replace(/,/g,'')):0});}
+    }
+    cwItemCache[today]=items.length?items:null;return cwItemCache[today];
+  }catch(e){cwItemCache[today]=null;return null;}
+}
+function genAnalysis(d,rates30,cwItems){
+  const valid=rates30.filter(v=>v!=null);
+  if(valid.length<7)return '分析に必要なデータが不足しています。';
+  const recent7=rates30.slice(-7).filter(v=>v!=null);
+  const prev7=rates30.slice(-14,-7).filter(v=>v!=null);
+  const avg7=recent7.reduce((a,b)=>a+b,0)/recent7.length;
+  const avgPrev7=prev7.length?prev7.reduce((a,b)=>a+b,0)/prev7.length:avg7;
+  const diff7=avg7-avgPrev7;
+  const rateTrend=diff7>1?'上昇傾向':diff7<-1?'下落傾向':'横ばい';
+  const rateDir=diff7>1?`前週比+${diff7.toFixed(1)}pt上昇`:diff7<-1?`前週比${diff7.toFixed(1)}pt下落`:'前週から大きな変化なし';
+  const maxR=Math.max(...valid).toFixed(1);const minR=Math.min(...valid).toFixed(1);
+  const regs30=[];for(let gi=29;gi>=0;gi--){const gd=aD(d,-gi);const gr=getD(gd);regs30.push(gr?gr.em:null);}
+  const regRecent7=regs30.slice(-7).filter(v=>v!=null);const regPrev7=regs30.slice(-14,-7).filter(v=>v!=null);
+  const regAvg7=regRecent7.length?regRecent7.reduce((a,b)=>a+b,0)/regRecent7.length:0;
+  const regAvgPrev7=regPrev7.length?regPrev7.reduce((a,b)=>a+b,0)/regPrev7.length:regAvg7;
+  const regDiff=regAvg7-regAvgPrev7;const regTrend=regDiff>0?'増加傾向':regDiff<0?'減少傾向':'横ばい';
+  let factorText='';
+  if(rateTrend==='上昇傾向'){factorText='アプリ外課金利用が増加しており、キャンペーンや人気アイテムの影響が考えられます。';}
+  else if(rateTrend==='下落傾向'){factorText='利用率の低下が見られ、魅力的なアイテム提供やキャンペーン実施による回復が期待されます。';}
+  else{factorText='利用率は安定推移しており、既存ユーザーの継続的な利用が維持されています。';}
+  let itemText='';if(cwItems&&cwItems.length>0){const topItem=cwItems.sort((a,b)=>b.sales-a.sales)[0];itemText=`アイテム別では「${topItem.name}」が売上トップ（${topItem.sales.toLocaleString()}円）。`;}
+  return `【利用率】直近30日の平均利用率は${avg7.toFixed(1)}%（最高${maxR}%・最低${minR}%）で${rateTrend}。${rateDir}。${factorText}${itemText}【登録者数】直近7日の平均日次登録者数は${regAvg7.toFixed(0)}人で${regTrend}（前週比${regDiff>=0?'+':''}${regDiff.toFixed(0)}人）。`;
 }
 function shD(n){const nx=aD(dDate,n);if(nx>LAT)return;dDate=nx;rdDy();}
 function pickD(v){if(!v)return;const p=v.split('-');dDate=new Date(+p[0],+p[1]-1,+p[2]);rdDy();}
