@@ -707,7 +707,7 @@ function rdDy(){
       cwWeek=flat.length?flat:null;
     }
     const text=genAnalysis(d,r30,cwToday,cwYest,cwWeek);
-    aEl.textContent=text;
+    aEl.innerHTML=text;
   })();
 }
 // サーバー側(/api/chatwork)経由でChatwork日次レポートを取得。トークンはVercel環境変数で管理
@@ -738,67 +738,73 @@ async function fetchCwItems(d){
   return map[dK(d)]||null;
 }
 function genAnalysis(d,rates30,cwToday,cwYest,cwWeek){
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const H=t=>`<div style="font-weight:700;color:var(--text);margin-top:8px">${t}</div>`;
+  const L=t=>`<div>${t}</div>`;
+  const RISE=1.5, FALL=0.5;   // 前日比の急上昇/急下降しきい値（150% / 50%）
   const valid=rates30.filter(v=>v!=null);
-  if(valid.length<7)return '分析に必要なデータが不足しています。';
-  // 利用率トレンド（直近7日 vs 前週）
-  const recent7=rates30.slice(-7).filter(v=>v!=null);
-  const prev7=rates30.slice(-14,-7).filter(v=>v!=null);
-  const avg7=recent7.reduce((a,b)=>a+b,0)/recent7.length;
-  const avgPrev7=prev7.length?prev7.reduce((a,b)=>a+b,0)/prev7.length:avg7;
-  const diff7=avg7-avgPrev7;
-  const rateTrend=diff7>1?'上昇傾向':diff7<-1?'下落傾向':'横ばい';
-  const rateDir=diff7>1?`前週比+${diff7.toFixed(1)}pt上昇`:diff7<-1?`前週比${diff7.toFixed(1)}pt下落`:'前週から大きな変化なし';
-  const maxR=Math.max(...valid).toFixed(1);const minR=Math.min(...valid).toFixed(1);
-  // 登録者数トレンド
-  const regs30=[];for(let gi=29;gi>=0;gi--){const gd=aD(d,-gi);const gr=getD(gd);regs30.push(gr?gr.em:null);}
-  const regRecent7=regs30.slice(-7).filter(v=>v!=null);const regPrev7=regs30.slice(-14,-7).filter(v=>v!=null);
-  const regAvg7=regRecent7.length?regRecent7.reduce((a,b)=>a+b,0)/regRecent7.length:0;
-  const regAvgPrev7=regPrev7.length?regPrev7.reduce((a,b)=>a+b,0)/regPrev7.length:regAvg7;
-  const regDiff=regAvg7-regAvgPrev7;const regTrend=regDiff>0?'増加傾向':regDiff<0?'減少傾向':'横ばい';
-  // 商品分析ヘルパー: ×N系を基本名でグルーピング
+  if(valid.length<7)return '<span style="color:var(--text3)">分析に必要なデータが不足しています。</span>';
+  const avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
+  // ---- 利用率 ----
+  const r30=valid, r7=rates30.slice(-7).filter(v=>v!=null), rPrev7=rates30.slice(-14,-7).filter(v=>v!=null);
+  const avg30=avg(r30), max30=Math.max(...r30), min30=Math.min(...r30);
+  const avg7=avg(r7), max7=Math.max(...r7), min7=Math.min(...r7);
+  const avgPrev7=rPrev7.length?avg(rPrev7):avg7;
+  const d7=avg7-avgPrev7;
+  const rateTrend=d7>1?'上昇':d7<-1?'下降':'横ばい';
+  const rateNote=Math.abs(d7)>1?`前週比${d7>=0?'+':''}${d7.toFixed(1)}pt`:'前週から大きな変化なし';
+  let html='';
+  html+=H('【利用率】');
+  html+=L(`直近30日平均 <b>${avg30.toFixed(1)}%</b>（最高 ${max30.toFixed(1)}% / 最低 ${min30.toFixed(1)}%）`);
+  html+=L(`直近7日平均 <b>${avg7.toFixed(1)}%</b>（最高 ${max7.toFixed(1)}% / 最低 ${min7.toFixed(1)}%） — <b>${rateTrend}</b>（${rateNote}）`);
+  // ---- アイテムの販売傾向 ----
+  html+=H('【アイテムの販売傾向】');
   const baseN=name=>name.replace(/[\s　]*[×xX×]\s*\d+\s*$/,'').trim();
   const grp=items=>{
-    const map={};
+    const m={};
     (items||[]).forEach(it=>{
       const bn=baseN(it.name);
-      if(!map[bn])map[bn]={name:bn,count:0,sales:0,pt:0};
-      map[bn].count+=it.count||0;map[bn].sales+=it.sales||0;map[bn].pt+=it.pt||0;
+      if(!m[bn])m[bn]={name:bn,count:0,sales:0,pt:0};
+      m[bn].count+=it.count||0;m[bn].sales+=it.sales||0;m[bn].pt+=it.pt||0;
     });
-    return Object.values(map);
+    return Object.values(m);
   };
-  let itemText='';
   if(!cwToday||!cwToday.length){
-    itemText='【商品分析】'+(cwStatus?(cwStatus.startsWith('取得済み')?'この日のレポート投稿が見つかりません（'+cwStatus+'）':cwStatus):'対象日のデータがありません')+'。';
+    const why=cwStatus?(cwStatus.startsWith('取得済み')?`この日のレポート投稿が見つかりません（${cwStatus}）`:cwStatus):'対象日のデータがありません';
+    html+=L(`<span style="color:var(--text3)">${esc(why)}</span>`);
+  }else{
+    const today=grp(cwToday).sort((a,b)=>b.sales-a.sales);
+    const yMap={};grp(cwYest||[]).forEach(x=>{yMap[x.name]=x;});
+    const wMap={};grp(cwWeek||[]).forEach(x=>{wMap[x.name]=x;});
+    const fmt=x=>`「${esc(x.name)}」${x.sales.toLocaleString()}円（${x.count}件）`;
+    // 新規追加: 過去7日間に販売実績なし
+    const newItems=today.filter(x=>!wMap[x.name]).sort((a,b)=>b.sales-a.sales);
+    html+=L(newItems.length
+      ? `新規追加：${newItems.slice(0,3).map(fmt).join('、')}${newItems.length>3?` ほか${newItems.length-3}件`:''}`
+      : '<span style="color:var(--text3)">新規追加：なし</span>');
+    // 前日比の急変（新規追加は除外）
+    const withRatio=today.filter(x=>wMap[x.name]&&yMap[x.name]&&yMap[x.name].sales>0)
+      .map(x=>({...x,ratio:x.sales/yMap[x.name].sales}));
+    const up=withRatio.filter(x=>x.ratio>=RISE).sort((a,b)=>b.ratio-a.ratio);
+    const down=withRatio.filter(x=>x.ratio<=FALL).sort((a,b)=>a.ratio-b.ratio);
+    const rf=x=>`「${esc(x.name)}」${x.sales.toLocaleString()}円（前日比 ${Math.round(x.ratio*100)}%）`;
+    html+=L(up.length
+      ? `売上急上昇：${up.slice(0,3).map(rf).join('、')}`
+      : '<span style="color:var(--text3)">売上急上昇：なし</span>');
+    html+=L(down.length
+      ? `売上急下降：${down.slice(0,3).map(rf).join('、')}`
+      : '<span style="color:var(--text3)">売上急下降：なし</span>');
   }
-  if(cwToday&&cwToday.length>0){
-    const todayG=grp(cwToday).sort((a,b)=>b.sales-a.sales);
-    const yesterdayMap={};grp(cwYest||[]).forEach(x=>{yesterdayMap[x.name]=x;});
-    const weekMap={};grp(cwWeek||[]).forEach(x=>{weekMap[x.name]=x;});
-    // 今日の売上TOP3
-    const top3=todayG.slice(0,3);
-    itemText=`【商品分析】本日売上上位：`;
-    itemText+=top3.map(x=>{
-      const yd=yesterdayMap[x.name];
-      const ydDiff=yd?x.sales-yd.sales:null;
-      const ydStr=ydDiff!=null?(ydDiff>=0?`前日比+${ydDiff.toLocaleString()}円`:`前日比${ydDiff.toLocaleString()}円`):'前日データなし';
-      return `「${x.name}」${x.sales.toLocaleString()}円・${x.count}件（${ydStr}）`;
-    }).join('、')+'。';
-    // 新商品（過去7日に存在しないが本日登場）
-    const newItems=todayG.filter(x=>!weekMap[x.name]);
-    if(newItems.length>0){
-      itemText+=`新登場：「${newItems.map(x=>x.name).join('」「')}」が本日初登場。`;
-    }
-    // 7日トレンド急伸（前週平均比+50%以上、件数3件以上）
-    const risingItems=todayG.filter(x=>{const w=weekMap[x.name];return w&&w.count>=3&&x.sales>w.sales/7*1.5;}).slice(0,2);
-    if(risingItems.length>0){
-      itemText+=`急伸：「${risingItems.map(x=>`${x.name}（7日平均比+${Math.round(x.sales/(weekMap[x.name].sales/7)*100-100)}%）`).join('、')}」。`;
-    }
-  }
-  let factorText='';
-  if(rateTrend==='上昇傾向'){factorText=cwToday?'上記アイテムの販売動向が利用率押し上げに寄与している可能性があります。':'アプリ外課金利用が増加しています。';}
-  else if(rateTrend==='下落傾向'){factorText='利用率の低下が見られます。新商品投入やキャンペーン実施による回復が期待されます。';}
-  else{factorText='利用率は安定推移しており、既存ユーザーの継続的な利用が維持されています。';}
-  return `【利用率】直近30日平均${avg7.toFixed(1)}%（最高${maxR}%・最低${minR}%）、${rateTrend}（${rateDir}）。${factorText}\n${itemText}【登録者数】直近7日平均${regAvg7.toFixed(0)}人で${regTrend}（前週比${regDiff>=0?'+':''}${regDiff.toFixed(0)}人）。`;
+  // ---- 登録者数 ----
+  const regs=[];for(let gi=29;gi>=0;gi--){const gd=aD(d,-gi);const gr=getD(gd);regs.push(gr?gr.em:null);}
+  const g7=regs.slice(-7).filter(v=>v!=null), gPrev7=regs.slice(-14,-7).filter(v=>v!=null);
+  const gAvg7=g7.length?avg(g7):0;
+  const gAvgPrev7=gPrev7.length?avg(gPrev7):gAvg7;
+  const gd7=gAvg7-gAvgPrev7;
+  const gTrend=gd7>0.5?'増加':gd7<-0.5?'減少':'横ばい';
+  html+=H('【登録者数】');
+  html+=L(`直近7日平均 <b>${gAvg7.toFixed(0)}人</b> — <b>${gTrend}</b>（前週比${gd7>=0?'+':''}${gd7.toFixed(0)}人）`);
+  return html;
 }
 function shD(n){const nx=aD(dDate,n);if(nx>LAT)return;dDate=nx;rdDy();}
 function pickD(v){if(!v)return;const p=v.split('-');dDate=new Date(+p[0],+p[1]-1,+p[2]);rdDy();}
