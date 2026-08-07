@@ -410,7 +410,7 @@ let iSrt='sales',iDr={sales:'desc',count:'desc',price:'desc'};
 let pSrt='consumed',pDr={consumed:'desc',count:'desc',pt:'desc'};
 let iData=[],pData=[];
 let sheetData={},itemsByMonth={},exchangeByMonth={};
-let cwItemCache={};
+let cwMsgsPromise=null;
 let gateMonthly={},voyageMonthly={},gateItems={},voyageItems={};
 const GV_SS_ID='1aMT3kouMohaoOnIb8KcxzJCW-QsjjnuSC2hkc1cwZZc';
 let accessToken=null,tokenClient=null;
@@ -706,52 +706,78 @@ function rdDy(){
     const r30=[];for(let gi=29;gi>=0;gi--){const gd=aD(d,-gi);const gr=getD(gd);r30.push(gr&&gr.app?parseFloat((gr.sal/gr.app*100).toFixed(2)):null);}
     const [y2,m2]=dK(d).split('-').map(Number);
     const isAfterAug=(y2>2026||(y2===2026&&m2>=8));
-    const cwItems=isAfterAug?await fetchCwItems(d):null;
-    const text=genAnalysis(d,r30,cwItems);
+    let cwToday=null,cwYest=null,cwWeek=null;
+    if(isAfterAug){
+      // 当日・前日・前7日を並列取得
+      const [t,...prev7arr]=await Promise.all([0,1,2,3,4,5,6,7].map(n=>fetchCwItems(aD(d,-n))));
+      cwToday=t;
+      cwYest=prev7arr[0];
+      const flat=prev7arr.filter(Boolean).flat();
+      cwWeek=flat.length?flat:null;
+    }
+    const text=genAnalysis(d,r30,cwToday,cwYest,cwWeek);
     aEl.textContent=text;
   })();
 }
 function toggleCwSetting(){const s=el('dy-cw-setting');if(s){s.style.display=s.style.display==='none'?'block':'none';if(s.style.display==='block'){const t=localStorage.getItem('cw_token')||'';const inp=el('dy-cw-token');if(inp)inp.value=t;}}}
-function saveCwToken(){const inp=el('dy-cw-token');if(!inp)return;const v=inp.value.trim();if(v){localStorage.setItem('cw_token',v);el('dy-cw-setting').style.display='none';rdDy();}else{alert('トークンを入力してください');}}
-async function fetchCwItems(d){
+function saveCwToken(){const inp=el('dy-cw-token');if(!inp)return;const v=inp.value.trim();if(v){localStorage.setItem('cw_token',v);cwMsgsPromise=null;el('dy-cw-setting').style.display='none';rdDy();}else{alert('トークンを入力してください');}}
+// CSV形式パース: CurrencyUnit,Price,Total,Point,TotalPoint,Amount,Name
+function parseCwBody(body){
+  const items=[];
+  for(const line of body.split('\n')){
+    const cols=line.split(',').map(s=>s.trim());
+    if(cols[0]!=='JPY')continue;
+    const total=parseInt(cols[2]),pt=parseInt(cols[4]),amount=parseInt(cols[5]);
+    const name=(cols[6]||'').trim();
+    if(!name||isNaN(total)||isNaN(amount))continue;
+    items.push({name,count:amount,sales:total,pt:isNaN(pt)?0:pt});
+  }
+  return items.length?items:null;
+}
+// ルームのメッセージを1回だけ取得し、対象日（投稿日の前日）ごとにマップ化
+async function getCwMap(){
   const token=localStorage.getItem('cw_token');
   if(!token)return null;
-  const today=dK(d);
-  if(cwItemCache[today]!==undefined)return cwItemCache[today];
-  try{
-    let roomId=localStorage.getItem('cw_bone_room_id');
-    if(!roomId){
-      const r=await fetch('https://api.chatwork.com/v2/rooms',{headers:{'X-ChatWorkToken':token}});
-      if(!r.ok){cwItemCache[today]=null;return null;}
-      const rooms=await r.json();
-      const room=rooms.find(x=>x.name&&x.name.includes('Bone日次'));
-      if(!room){cwItemCache[today]=null;return null;}
-      roomId=String(room.room_id);
-      localStorage.setItem('cw_bone_room_id',roomId);
-    }
-    const mr=await fetch(`https://api.chatwork.com/v2/rooms/${roomId}/messages?force=1`,{headers:{'X-ChatWorkToken':token}});
-    if(!mr.ok){cwItemCache[today]=null;return null;}
-    const msgs=await mr.json();
-    const [ty,tm,tdd]=dK(d).split('-').map(Number);
-    const label=`${tm}月${tdd}日`;
-    let targetMsg=null;
-    for(const msg of msgs){const body=msg.body||'';if(body.includes(label)&&body.includes('アイテム')){targetMsg=body;break;}}
-    if(!targetMsg){cwItemCache[today]=null;return null;}
-    const items=[];const lines=targetMsg.split('\n');let inItems=false;
-    for(const line of lines){
-      if(line.includes('アイテム')||line.includes('商品')||line.includes('決済数')){inItems=true;}
-      if(!inItems)continue;
-      const mCount=line.match(/決済数[：:]\s*(\d+)/);
-      const mSales=line.match(/売上[：:]\s*([\d,]+)/);
-      const mPt=line.match(/ポイント[：:]\s*([\d,]+)/);
-      if(mCount||mSales){const namePart=line.replace(/決済数.*$/,'').replace(/[：:\s]/g,'').trim();items.push({name:namePart||'不明',count:mCount?parseInt(mCount[1]):0,sales:mSales?parseInt(mSales[1].replace(/,/g,'')):0,pt:mPt?parseInt(mPt[1].replace(/,/g,'')):0});}
-    }
-    cwItemCache[today]=items.length?items:null;return cwItemCache[today];
-  }catch(e){cwItemCache[today]=null;return null;}
+  if(cwMsgsPromise)return cwMsgsPromise;
+  cwMsgsPromise=(async()=>{
+    try{
+      let roomId=localStorage.getItem('cw_bone_room_id');
+      if(!roomId){
+        const r=await fetch('https://api.chatwork.com/v2/rooms',{headers:{'X-ChatWorkToken':token}});
+        if(!r.ok)return null;
+        const rooms=await r.json();
+        const room=rooms.find(x=>x.name&&x.name.includes('Bone日次'));
+        if(!room)return null;
+        roomId=String(room.room_id);
+        localStorage.setItem('cw_bone_room_id',roomId);
+      }
+      const mr=await fetch(`https://api.chatwork.com/v2/rooms/${roomId}/messages?force=1`,{headers:{'X-ChatWorkToken':token}});
+      if(!mr.ok)return null;
+      const msgs=await mr.json();
+      const map={};
+      for(const msg of (msgs||[])){
+        const body=msg.body||'';
+        if(!body.includes('CurrencyUnit'))continue;
+        // 日次レポートは投稿日の前日分
+        const posted=new Date((msg.send_time||0)*1000);
+        const target=dK(aD(posted,-1));
+        if(map[target])continue;
+        map[target]=parseCwBody(body);
+      }
+      return map;
+    }catch(e){return null;}
+  })();
+  return cwMsgsPromise;
 }
-function genAnalysis(d,rates30,cwItems){
+async function fetchCwItems(d){
+  const map=await getCwMap();
+  if(!map)return null;
+  return map[dK(d)]||null;
+}
+function genAnalysis(d,rates30,cwToday,cwYest,cwWeek){
   const valid=rates30.filter(v=>v!=null);
   if(valid.length<7)return '分析に必要なデータが不足しています。';
+  // 利用率トレンド（直近7日 vs 前週）
   const recent7=rates30.slice(-7).filter(v=>v!=null);
   const prev7=rates30.slice(-14,-7).filter(v=>v!=null);
   const avg7=recent7.reduce((a,b)=>a+b,0)/recent7.length;
@@ -760,17 +786,53 @@ function genAnalysis(d,rates30,cwItems){
   const rateTrend=diff7>1?'上昇傾向':diff7<-1?'下落傾向':'横ばい';
   const rateDir=diff7>1?`前週比+${diff7.toFixed(1)}pt上昇`:diff7<-1?`前週比${diff7.toFixed(1)}pt下落`:'前週から大きな変化なし';
   const maxR=Math.max(...valid).toFixed(1);const minR=Math.min(...valid).toFixed(1);
+  // 登録者数トレンド
   const regs30=[];for(let gi=29;gi>=0;gi--){const gd=aD(d,-gi);const gr=getD(gd);regs30.push(gr?gr.em:null);}
   const regRecent7=regs30.slice(-7).filter(v=>v!=null);const regPrev7=regs30.slice(-14,-7).filter(v=>v!=null);
   const regAvg7=regRecent7.length?regRecent7.reduce((a,b)=>a+b,0)/regRecent7.length:0;
   const regAvgPrev7=regPrev7.length?regPrev7.reduce((a,b)=>a+b,0)/regPrev7.length:regAvg7;
   const regDiff=regAvg7-regAvgPrev7;const regTrend=regDiff>0?'増加傾向':regDiff<0?'減少傾向':'横ばい';
+  // 商品分析ヘルパー: ×N系を基本名でグルーピング
+  const baseN=name=>name.replace(/[\s　]*[×xX×]\s*\d+\s*$/,'').trim();
+  const grp=items=>{
+    const map={};
+    (items||[]).forEach(it=>{
+      const bn=baseN(it.name);
+      if(!map[bn])map[bn]={name:bn,count:0,sales:0,pt:0};
+      map[bn].count+=it.count||0;map[bn].sales+=it.sales||0;map[bn].pt+=it.pt||0;
+    });
+    return Object.values(map);
+  };
+  let itemText='';
+  if(cwToday&&cwToday.length>0){
+    const todayG=grp(cwToday).sort((a,b)=>b.sales-a.sales);
+    const yesterdayMap={};grp(cwYest||[]).forEach(x=>{yesterdayMap[x.name]=x;});
+    const weekMap={};grp(cwWeek||[]).forEach(x=>{weekMap[x.name]=x;});
+    // 今日の売上TOP3
+    const top3=todayG.slice(0,3);
+    itemText=`【商品分析】本日売上上位：`;
+    itemText+=top3.map(x=>{
+      const yd=yesterdayMap[x.name];
+      const ydDiff=yd?x.sales-yd.sales:null;
+      const ydStr=ydDiff!=null?(ydDiff>=0?`前日比+${ydDiff.toLocaleString()}円`:`前日比${ydDiff.toLocaleString()}円`):'前日データなし';
+      return `「${x.name}」${x.sales.toLocaleString()}円・${x.count}件（${ydStr}）`;
+    }).join('、')+'。';
+    // 新商品（過去7日に存在しないが本日登場）
+    const newItems=todayG.filter(x=>!weekMap[x.name]);
+    if(newItems.length>0){
+      itemText+=`新登場：「${newItems.map(x=>x.name).join('」「')}」が本日初登場。`;
+    }
+    // 7日トレンド急伸（前週平均比+50%以上、件数3件以上）
+    const risingItems=todayG.filter(x=>{const w=weekMap[x.name];return w&&w.count>=3&&x.sales>w.sales/7*1.5;}).slice(0,2);
+    if(risingItems.length>0){
+      itemText+=`急伸：「${risingItems.map(x=>`${x.name}（7日平均比+${Math.round(x.sales/(weekMap[x.name].sales/7)*100-100)}%）`).join('、')}」。`;
+    }
+  }
   let factorText='';
-  if(rateTrend==='上昇傾向'){factorText='アプリ外課金利用が増加しており、キャンペーンや人気アイテムの影響が考えられます。';}
-  else if(rateTrend==='下落傾向'){factorText='利用率の低下が見られ、魅力的なアイテム提供やキャンペーン実施による回復が期待されます。';}
+  if(rateTrend==='上昇傾向'){factorText=cwToday?'上記アイテムの販売動向が利用率押し上げに寄与している可能性があります。':'アプリ外課金利用が増加しています。';}
+  else if(rateTrend==='下落傾向'){factorText='利用率の低下が見られます。新商品投入やキャンペーン実施による回復が期待されます。';}
   else{factorText='利用率は安定推移しており、既存ユーザーの継続的な利用が維持されています。';}
-  let itemText='';if(cwItems&&cwItems.length>0){const topItem=cwItems.sort((a,b)=>b.sales-a.sales)[0];itemText=`アイテム別では「${topItem.name}」が売上トップ（${topItem.sales.toLocaleString()}円）。`;}
-  return `【利用率】直近30日の平均利用率は${avg7.toFixed(1)}%（最高${maxR}%・最低${minR}%）で${rateTrend}。${rateDir}。${factorText}${itemText}【登録者数】直近7日の平均日次登録者数は${regAvg7.toFixed(0)}人で${regTrend}（前週比${regDiff>=0?'+':''}${regDiff.toFixed(0)}人）。`;
+  return `【利用率】直近30日平均${avg7.toFixed(1)}%（最高${maxR}%・最低${minR}%）、${rateTrend}（${rateDir}）。${factorText}\n${itemText}【登録者数】直近7日平均${regAvg7.toFixed(0)}人で${regTrend}（前週比${regDiff>=0?'+':''}${regDiff.toFixed(0)}人）。`;
 }
 function shD(n){const nx=aD(dDate,n);if(nx>LAT)return;dDate=nx;rdDy();}
 function pickD(v){if(!v)return;const p=v.split('-');dDate=new Date(+p[0],+p[1]-1,+p[2]);rdDy();}
