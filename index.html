@@ -272,17 +272,7 @@ tr:hover td{background:#F8FAFF}
 <div style="position:relative;height:160px"><canvas id="dy-rate30c"></canvas></div>
 </div>
 <div class="card" style="margin-bottom:14px" id="dy-analysis-card">
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-  <div class="ct" style="margin:0">傾向分析</div>
-  <button onclick="toggleCwSetting()" style="font-size:10px;padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text3);cursor:pointer">Chatwork設定</button>
-</div>
-<div id="dy-cw-setting" style="display:none;margin-bottom:10px;padding:8px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)">
-  <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Chatwork APIトークン</div>
-  <div style="display:flex;gap:6px">
-    <input id="dy-cw-token" type="password" placeholder="APIトークンを入力" style="flex:1;font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text)">
-    <button onclick="saveCwToken()" style="font-size:11px;padding:4px 10px;border:none;border-radius:4px;background:var(--accent);color:#fff;cursor:pointer">保存</button>
-  </div>
-</div>
+<div class="ct" style="margin-bottom:10px">傾向分析</div>
 <div id="dy-analysis" style="font-size:12px;line-height:1.8;color:var(--text2);min-height:60px">
   <span style="color:var(--text3)">データ読み込み中…</span>
 </div>
@@ -720,57 +710,21 @@ function rdDy(){
     aEl.textContent=text;
   })();
 }
-function toggleCwSetting(){const s=el('dy-cw-setting');if(s){s.style.display=s.style.display==='none'?'block':'none';if(s.style.display==='block'){const t=localStorage.getItem('cw_token')||'';const inp=el('dy-cw-token');if(inp)inp.value=t;}}}
-function saveCwToken(){const inp=el('dy-cw-token');if(!inp)return;const v=inp.value.trim();if(v){localStorage.setItem('cw_token',v);cwMsgsPromise=null;el('dy-cw-setting').style.display='none';rdDy();}else{alert('トークンを入力してください');}}
-// CSV形式パース: CurrencyUnit,Price,Total,Point,TotalPoint,Amount,Name
-function parseCwBody(body){
-  const items=[];
-  for(const line of body.split('\n')){
-    const cols=line.split(',').map(s=>s.trim());
-    if(cols[0]!=='JPY')continue;
-    const total=parseInt(cols[2]),pt=parseInt(cols[4]),amount=parseInt(cols[5]);
-    const name=(cols[6]||'').trim();
-    if(!name||isNaN(total)||isNaN(amount))continue;
-    items.push({name,count:amount,sales:total,pt:isNaN(pt)?0:pt});
-  }
-  return items.length?items:null;
-}
-// ルームのメッセージを1回だけ取得し、対象日（投稿日の前日）ごとにマップ化
+// サーバー側(/api/chatwork)経由でChatwork日次レポートを取得。トークンはVercel環境変数で管理
 async function getCwMap(){
-  const token=localStorage.getItem('cw_token');
-  if(!token){cwStatus='Chatwork未設定（右上のボタンからAPIトークンを登録してください）';return null;}
   if(cwMsgsPromise)return cwMsgsPromise;
   cwMsgsPromise=(async()=>{
     try{
-      let roomId=localStorage.getItem('cw_bone_room_id');
-      if(!roomId){
-        const r=await fetch('https://api.chatwork.com/v2/rooms',{headers:{'X-ChatWorkToken':token}});
-        if(!r.ok){cwStatus=`ルーム一覧の取得に失敗（HTTP ${r.status}）。トークンをご確認ください`;return null;}
-        const rooms=await r.json();
-        const room=rooms.find(x=>x.name&&(x.name.includes('Bone日次')||x.name.includes('Bone')&&x.name.includes('日次')));
-        if(!room){cwStatus='対象ルームが見つかりません（ルーム名に「Bone日次」を含む部屋を検索しています）';return null;}
-        roomId=String(room.room_id);
-        localStorage.setItem('cw_bone_room_id',roomId);
-      }
-      const mr=await fetch(`https://api.chatwork.com/v2/rooms/${roomId}/messages?force=1`,{headers:{'X-ChatWorkToken':token}});
-      if(!mr.ok){cwStatus=`メッセージ取得に失敗（HTTP ${mr.status}）`;return null;}
-      const msgs=await mr.json();
-      const map={};
-      for(const msg of (msgs||[])){
-        const body=msg.body||'';
-        if(!body.includes('CurrencyUnit'))continue;
-        // 日次レポートは投稿日の前日分
-        const posted=new Date((msg.send_time||0)*1000);
-        const target=dK(aD(posted,-1));
-        if(map[target])continue;
-        map[target]=parseCwBody(body);
-      }
+      const r=await fetch('/api/chatwork');
+      const j=await r.json().catch(()=>null);
+      if(!r.ok){cwStatus=(j&&j.error)?j.error:`取得に失敗（HTTP ${r.status}）`;return null;}
+      const map=(j&&j.map)||{};
       const keys=Object.keys(map).sort();
-      if(!keys.length){cwStatus='取得した投稿に商品データ（CurrencyUnit行）が見つかりません';return null;}
+      if(!keys.length){cwStatus='商品データを含む投稿が見つかりません';return null;}
       cwStatus=`取得済み：${keys.length}日分（${keys[0]}〜${keys[keys.length-1]}）`;
       return map;
     }catch(e){
-      cwStatus='Chatworkへの接続に失敗しました。ブラウザから直接APIを呼べない（CORS制限）可能性があります';
+      cwStatus='レポート取得APIへの接続に失敗しました';
       return null;
     }
   })();
