@@ -481,8 +481,8 @@ tr:hover td{background:#F8FAFF}
 // ======= GOOGLE SHEETS CONFIG =======
 const CLIENT_ID = '572507655510-5bb4p4gbove96uo3odk51h6simk75k2g.apps.googleusercontent.com';
 const SCOPES = 'openid email profile https://www.googleapis.com/auth/spreadsheets.readonly';
-// ユーザー管理API（GASウェブアプリのURL）。空のままだとアクセス制限は無効のまま動く。
-const ADMIN_API = 'https://script.google.com/a/macros/drecom.co.jp/s/AKfycbwwuQrQI_Ee6Ko6RGXMj68qCGA1Erlnvv7LI-GxF84xQs7W1jyxsJhzqnyr21-tEKbbAQ/exec';
+// ユーザー管理API。空にするとアクセス制限は無効のまま動く。
+const ADMIN_API = '/api/users';
 const SPREADSHEET_ID = '1qCt6QTT-TZq9nkCSru_1_HPYTtaco1FAmLejl37jm3A';
 
 // ======= STATE =======
@@ -1517,12 +1517,12 @@ async function initDashboard(){
 // ======= ユーザー管理 =======
 let myRole='',myEmail='',adUsers=[],adReqs=[],adSel=new Set(),adBusy=false;
 
-/** GASウェブアプリを呼ぶ。text/plain にして preflight を避ける。 */
+/** ユーザー管理APIを呼ぶ。ダッシュボードと同じドメインなのでCORSは発生しない。 */
 async function adApi(action,body){
   if(!ADMIN_API)throw new Error('ユーザー管理APIが未設定です');
   const r=await fetch(ADMIN_API,{
     method:'POST',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    headers:{'Content-Type':'application/json'},
     body:JSON.stringify(Object.assign({action,token:accessToken},body||{}))
   });
   const j=await r.json();
@@ -1612,7 +1612,7 @@ async function adLoad(){
     adRender();
   }catch(e){
     b.innerHTML='<div class="ad-card"><div class="ad-bd"><div class="ad-err" style="min-height:0">'+adEsc(e.message)+'</div>'
-      +'<div class="ad-hint">ユーザー管理APIに接続できません。GASのデプロイURLをご確認ください。</div></div></div>';
+      +'<div class="ad-hint">ユーザー管理APIに接続できません。Vercelの環境変数をご確認ください。</div></div></div>';
   }
 }
 
