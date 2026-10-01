@@ -217,6 +217,7 @@ tr:hover td{background:#F8FAFF}
   <button class="nb" onclick="go('it')">🛍 商品</button>
   <button class="nb" onclick="go('pt')">💎 ポイント交換</button>
   <div id="user-info">
+    <span id="last-updated" style="font-size:11px;color:var(--text3);margin-right:10px;white-space:nowrap"></span>
     <img id="user-avatar" src="" alt="">
     <span id="user-name"></span>
     <button id="logout-btn" onclick="signOut()">ログアウト</button>
@@ -1067,26 +1068,116 @@ function renderPT(){
 }
 
 // ======= GOOGLE AUTH =======
-function signIn(){
-  tokenClient=google.accounts.oauth2.initTokenClient({
-    client_id:CLIENT_ID,scope:SCOPES,
-    callback:async(resp)=>{
-      if(resp.error){alert('ログインに失敗しました: '+resp.error);return;}
-      accessToken=resp.access_token;
-      await fetchUserInfo(accessToken);
-      el('login-overlay').style.display='none';
-      const ui=el('user-info');if(ui)ui.style.display='flex';
-      await initDashboard();
-    },
-  });
-  tokenClient.requestAccessToken();
+// アクセストークンはlocalStorageに保持し、期限切れ時はサイレントに再取得する。
+// Googleのセッションが生きている限り、再読み込みでもログイン操作は不要。
+const TOKEN_KEY='tpdash_token';
+const REFRESH_MIN=30;                 // データ自動更新の間隔（分）
+let tokenExpiresAt=0,lastLoadedAt=0,refreshTimer=null;
+
+function saveToken_(tok,expiresIn){
+  tokenExpiresAt=Date.now()+(((expiresIn||3600)-120)*1000);   // 2分の余裕を見る
+  accessToken=tok;
+  try{localStorage.setItem(TOKEN_KEY,JSON.stringify({t:tok,e:tokenExpiresAt}));}catch(e){}
 }
-function signOut(){
-  if(accessToken)google.accounts.oauth2.revoke(accessToken);
-  accessToken=null;
+function loadToken_(){
+  try{
+    const j=JSON.parse(localStorage.getItem(TOKEN_KEY)||'null');
+    if(j&&j.t&&j.e&&j.e>Date.now()){accessToken=j.t;tokenExpiresAt=j.e;return true;}
+  }catch(e){}
+  return false;
+}
+function clearToken_(){
+  accessToken=null;tokenExpiresAt=0;
+  try{localStorage.removeItem(TOKEN_KEY);}catch(e){}
+}
+function tokenClient_(){
+  if(!tokenClient){
+    tokenClient=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:SCOPES,callback:()=>{}});
+  }
+  return tokenClient;
+}
+/** silent=true なら画面を出さずに再認証を試みる */
+function requestToken_(silent){
+  return new Promise((resolve,reject)=>{
+    let tc;
+    try{tc=tokenClient_();}catch(e){reject(e);return;}
+    tc.callback=(resp)=>{
+      if(resp&&resp.access_token){saveToken_(resp.access_token,resp.expires_in);resolve(resp.access_token);}
+      else reject(new Error((resp&&resp.error)||'認証に失敗しました'));
+    };
+    tc.error_callback=(err)=>reject(new Error((err&&err.type)||'認証に失敗しました'));
+    try{tc.requestAccessToken(silent?{prompt:''}:{});}catch(e){reject(e);}
+  });
+}
+/** 有効なトークンを用意する（期限切れならサイレント更新） */
+async function ensureToken_(){
+  if(accessToken&&tokenExpiresAt>Date.now())return accessToken;
+  if(loadToken_())return accessToken;
+  return await requestToken_(true);
+}
+function showLogin_(){
   el('login-overlay').style.display='flex';
   const ui=el('user-info');if(ui)ui.style.display='none';
+}
+async function startApp_(){
+  el('login-overlay').style.display='none';
+  const ui=el('user-info');if(ui)ui.style.display='flex';
+  await fetchUserInfo(accessToken);
+  await initDashboard();
+  markUpdated_();
+  startAutoRefresh_();
+}
+/** ログインボタン */
+function signIn(){
+  requestToken_(false).then(startApp_).catch(e=>{alert('ログインに失敗しました: '+e.message);});
+}
+function signOut(){
+  if(accessToken){try{google.accounts.oauth2.revoke(accessToken);}catch(e){}}
+  clearToken_();
+  if(refreshTimer){clearInterval(refreshTimer);refreshTimer=null;}
+  showLogin_();
   el('user-avatar').src='';el('user-name').textContent='';
+  const lu=el('last-updated');if(lu)lu.textContent='';
+}
+/** 起動時: 保存済みトークン → サイレント再認証 → だめならログイン画面 */
+async function boot_(){
+  if(!(window.google&&google.accounts&&google.accounts.oauth2)){setTimeout(boot_,200);return;}
+  if(loadToken_()){
+    try{await startApp_();return;}catch(e){clearToken_();}
+  }
+  try{await requestToken_(true);await startApp_();}
+  catch(e){showLogin_();}
+}
+window.addEventListener('load',boot_);
+
+// ======= 自動更新 =======
+function markUpdated_(){
+  lastLoadedAt=Date.now();
+  const e=el('last-updated');
+  if(e)e.textContent='最終更新 '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+}
+function startAutoRefresh_(){
+  if(refreshTimer)clearInterval(refreshTimer);
+  refreshTimer=setInterval(()=>refreshData_(),REFRESH_MIN*60*1000);
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden&&Date.now()-lastLoadedAt>REFRESH_MIN*60*1000)refreshData_();
+  });
+}
+/** 画面の選択状態を保ったままデータだけ取り直す */
+async function refreshData_(){
+  try{
+    await ensureToken_();
+    const keep={d:dDate,m:{...mYM},o:{...ovYM}};
+    await loadData(true);
+    await fetchGateVoyageData();
+    dDate=keep.d;mYM=keep.m;ovYM=keep.o;
+    rdDy();rdMo();rdIT();rdPT();rdOv();
+    markUpdated_();
+  }catch(e){
+    console.error('自動更新に失敗:',e);
+    const lu=el('last-updated');
+    if(lu)lu.textContent='更新に失敗（再読み込みしてください）';
+  }
 }
 async function fetchUserInfo(token){
   try{
@@ -1145,8 +1236,8 @@ async function fetchAllSheetData(){
   return{allRows,itemsByMonth:ibm,exchangeByMonth:ebm};
 }
 
-async function loadData(){
-  document.body.style.opacity='0.5';
+async function loadData(silent){
+  if(!silent)document.body.style.opacity='0.5';
   try{
     const{allRows:dataRows,itemsByMonth:ibm,exchangeByMonth:ebm}=await fetchAllSheetData();
     itemsByMonth=ibm;exchangeByMonth=ebm;
@@ -1180,13 +1271,17 @@ async function loadData(){
     }
   }catch(e){
     console.error('Data load error:',e);
+    if(silent)throw e;
     alert('データの読み込みに失敗しました：'+e.message);
   }finally{
-    document.body.style.opacity='1';
+    if(!silent)document.body.style.opacity='1';
   }
 }
 
 async function fetchGateVoyageData(){
+  // 再取得時に商品データが重複しないよう毎回リセットする
+  gateMonthly={};voyageMonthly={};ironMonthly={};
+  gateItems={};voyageItems={};ironItems={};
   try{
     const metaRes=await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${GV_SS_ID}?fields=sheets.properties`,
