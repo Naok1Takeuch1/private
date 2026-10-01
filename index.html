@@ -347,7 +347,7 @@ tr:hover td{background:#F8FAFF}
 <!-- ===== 商品 ===== -->
 <div id="pane-it" class="pane">
 <div class="srow" id="it-srow"></div>
-<div class="ptabs"><button class="ptab" id="itp-prev" onclick="setP('i','prev')">前月</button><button class="ptab" id="itp-3m" onclick="setP('i','3m')">直近3ヶ月</button><button class="ptab on" id="itp-6m" onclick="setP('i','6m')">直近6ヶ月</button><button class="ptab" id="itp-custom" onclick="setP('i','custom')">カスタム</button></div>
+<div class="ptabs"><button class="ptab on" id="itp-prev" onclick="setP('i','prev')">前月</button><button class="ptab" id="itp-3m" onclick="setP('i','3m')">直近3ヶ月</button><button class="ptab" id="itp-6m" onclick="setP('i','6m')">直近6ヶ月</button><button class="ptab" id="itp-custom" onclick="setP('i','custom')">カスタム</button></div>
 <div id="it-cr" style="display:none" class="crange"><label>開始月：</label><input type="month" id="it-f"><label>終了月：</label><input type="month" id="it-t"><button class="ab" onclick="applyP('i')">適用</button></div>
 <div class="head" id="it-h"></div><div class="sub" id="it-s"></div>
 <div class="s4">
@@ -372,7 +372,7 @@ tr:hover td{background:#F8FAFF}
 <!-- ===== ポイント交換 ===== -->
 <div id="pane-pt" class="pane">
 <div class="srow" id="pt-srow"></div>
-<div class="ptabs"><button class="ptab" id="ptp-prev" onclick="setP('p','prev')">前月</button><button class="ptab" id="ptp-3m" onclick="setP('p','3m')">直近3ヶ月</button><button class="ptab on" id="ptp-6m" onclick="setP('p','6m')">直近6ヶ月</button><button class="ptab" id="ptp-custom" onclick="setP('p','custom')">カスタム</button></div>
+<div class="ptabs"><button class="ptab on" id="ptp-prev" onclick="setP('p','prev')">前月</button><button class="ptab" id="ptp-3m" onclick="setP('p','3m')">直近3ヶ月</button><button class="ptab" id="ptp-6m" onclick="setP('p','6m')">直近6ヶ月</button><button class="ptab" id="ptp-custom" onclick="setP('p','custom')">カスタム</button></div>
 <div id="pt-cr" style="display:none" class="crange"><label>開始月：</label><input type="month" id="pt-f"><label>終了月：</label><input type="month" id="pt-t"><button class="ab" onclick="applyP('p')">適用</button></div>
 <div class="head" id="pt-h"></div><div class="sub" id="pt-s"></div>
 <div class="s4">
@@ -402,7 +402,7 @@ let dSvc='bone',mSvc='bone',iSvc='bone',pSvc='bone';
 let ovYM={y:0,m:0};
 let dDate=(()=>{const d=new Date();d.setDate(d.getDate()-1);return d;})();
 let mYM={...MLAT};
-let iPer='6m',pPer='6m';
+let iPer='prev',pPer='prev';
 let iSrt='sales',iDr={sales:'desc',count:'desc',price:'desc'};
 let pSrt='consumed',pDr={consumed:'desc',count:'desc',pt:'desc'};
 let iData=[],pData=[];
@@ -948,8 +948,10 @@ function shM(n){
 
 // ======= ITEMS PERIOD =======
 function getItemMonthRange(){
-  const now=MLAT;
-  if(iPer==='prev'){const p=pYM(now);return{fromYM:`${p.y}-${String(p.m+1).padStart(2,'0')}`,toYM:`${p.y}-${String(p.m+1).padStart(2,'0')}`};}
+  // 基準月はアクセス日の前月（データ未入力の当月は含めない）
+  const td=new Date();
+  const now=pYM({y:td.getFullYear(),m:td.getMonth()});
+  if(iPer==='prev'){return{fromYM:`${now.y}-${String(now.m+1).padStart(2,'0')}`,toYM:`${now.y}-${String(now.m+1).padStart(2,'0')}`};}
   if(iPer==='3m'){let pm=now.m-2,py=now.y;if(pm<0){py--;pm+=12;}return{fromYM:`${py}-${String(pm+1).padStart(2,'0')}`,toYM:`${now.y}-${String(now.m+1).padStart(2,'0')}`};}
   if(iPer==='6m'){let pm=now.m-5,py=now.y;if(pm<0){py--;pm+=12;}return{fromYM:`${py}-${String(pm+1).padStart(2,'0')}`,toYM:`${now.y}-${String(now.m+1).padStart(2,'0')}`};}
   const fi=el('it-f'),ti=el('it-t');
@@ -1024,8 +1026,10 @@ function updateSrtBtns(tab){
 
 // ======= POINTS TAB =======
 function getExchMonthRange(){
-  const now=MLAT;
-  if(pPer==='prev'){const p=pYM(now);return{fromYM:`${p.y}-${String(p.m+1).padStart(2,'0')}`,toYM:`${p.y}-${String(p.m+1).padStart(2,'0')}`};}
+  // 基準月はアクセス日の前月（データ未入力の当月は含めない）
+  const td=new Date();
+  const now=pYM({y:td.getFullYear(),m:td.getMonth()});
+  if(pPer==='prev'){return{fromYM:`${now.y}-${String(now.m+1).padStart(2,'0')}`,toYM:`${now.y}-${String(now.m+1).padStart(2,'0')}`};}
   if(pPer==='3m'){let pm=now.m-2,py=now.y;if(pm<0){py--;pm+=12;}return{fromYM:`${py}-${String(pm+1).padStart(2,'0')}`,toYM:`${now.y}-${String(now.m+1).padStart(2,'0')}`};}
   if(pPer==='6m'){let pm=now.m-5,py=now.y;if(pm<0){py--;pm+=12;}return{fromYM:`${py}-${String(pm+1).padStart(2,'0')}`,toYM:`${now.y}-${String(now.m+1).padStart(2,'0')}`};}
   const fi=el('pt-f'),ti=el('pt-t');
@@ -1213,7 +1217,9 @@ async function fetchAllSheetData(){
     const ym=mm?`${mm[1]}-${String(mm[2]).padStart(2,'0')}`:null;
     const rows=(batch.valueRanges[i].values||[]);
     const dataRows=rows.slice(8);
-    allRows.push(...dataRows);
+    // シート名の年を各行に付与する（行の「M月D日」だけでは年を特定できないため）
+    const sheetYear=mm?parseInt(mm[1]):null;
+    for(const row of dataRows)allRows.push({year:sheetYear,cols:row});
     if(ym){
       const items=[];
       for(const row of dataRows){
@@ -1243,15 +1249,19 @@ async function loadData(silent){
     itemsByMonth=ibm;exchangeByMonth=ebm;
     sheetData={};
     let lat=null;
-    for(const cols of dataRows){
+    for(const rec of dataRows){
+      const cols=rec.cols;
       if(!cols||!cols[0])continue;
       const dateStr=cols[0];
       const match=dateStr.match(/(\d+)月(\d+)日/);
       if(!match)continue;
       const monthIdx=parseInt(match[1])-1,day=parseInt(match[2]);
-      const now=new Date();
-      let year=now.getFullYear();
-      if(monthIdx>now.getMonth()+2)year--;
+      // 年はシート名から取得する（推定しない）
+      const year=rec.year;
+      if(!year)continue;
+      // 日付行だけ用意されていて実績が未入力の行は取り込まない
+      const hasVal=[4,5,6,10,12].some(c=>parseNum(cols[c])>0);
+      if(!hasVal)continue;
       const dateKey=`${year}-${String(monthIdx+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const dateObj=new Date(year,monthIdx,day);
       const exch800=parseNum(cols[14]),exch50=parseNum(cols[16]);
