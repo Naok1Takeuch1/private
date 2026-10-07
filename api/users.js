@@ -174,7 +174,7 @@ const norm = v => String(v == null ? '' : v).trim().toLowerCase();
 const validEmail = v => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
 
 async function readUsers() {
-  const rows = await getValues(SH_USERS + '!A2:E');
+  const rows = await getValues(SH_USERS + '!A2:F');
   const out = [];
   rows.forEach((r, i) => {
     const em = norm(r[0]);
@@ -184,7 +184,8 @@ async function readUsers() {
       email: em,
       role: String(r[1] || 'member').trim() === 'admin' ? 'admin' : 'member',
       memo: String(r[2] || ''),
-      at: String(r[3] || '')
+      at: String(r[3] || ''),
+      last: String(r[5] || '')
     });
   });
   return out;
@@ -220,7 +221,7 @@ function lastPending(rs, email) {
 async function snapshot() {
   const [users, reqs] = await Promise.all([readUsers(), readReqs()]);
   return {
-    users: users.map(u => ({ email: u.email, role: u.role, memo: u.memo, at: u.at })),
+    users: users.map(u => ({ email: u.email, role: u.role, memo: u.memo, at: u.at, last: u.last })),
     requests: pendingOf(reqs).map(r => ({ email: r.email, memo: r.memo, at: r.at }))
   };
 }
@@ -230,7 +231,15 @@ async function snapshot() {
 async function me(email) {
   const users = await readUsers();
   const u = users.find(x => x.email === email);
-  if (u) return { ok: true, status: 'ok', email, role: u.role };
+  if (u) {
+    // 最終ログイン日時を上書きする。失敗してもログインは通す。
+    try {
+      await setValues(`${SH_USERS}!F${u.row}`, [[now_()]]);
+    } catch (e) {
+      console.error('最終ログインの記録に失敗しました: ' + ((e && e.message) || e));
+    }
+    return { ok: true, status: 'ok', email, role: u.role };
+  }
 
   const reqs = await readReqs();
   const pending = !!lastPending(reqs, email);

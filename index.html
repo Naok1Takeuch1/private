@@ -58,7 +58,8 @@ body{font-family:'Inter',sans-serif;font-size:13px;background:var(--bg);color:va
 .ad-cnt{display:inline-flex;align-items:center;justify-content:center;min-width:21px;height:21px;padding:0 7px;border-radius:999px;background:var(--amber);color:#fff;font-size:11px;font-weight:800}
 .ad-cnt.z{background:var(--border2);color:var(--text3)}
 .ad-tw{overflow-x:auto}
-.ad-tw table{border-collapse:collapse;width:100%;min-width:620px;font-size:12px;table-layout:auto}
+.ad-tw table{border-collapse:collapse;width:100%;min-width:720px;font-size:12px;table-layout:auto}
+.ad-tw td.ad-last{white-space:nowrap;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums}
 .ad-tw th,.ad-tw td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--border);vertical-align:middle}
 .ad-tw th{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);font-weight:800;background:var(--surface2);white-space:nowrap}
 .ad-tw tbody tr:last-child td{border-bottom:none}
@@ -1660,7 +1661,8 @@ function adRender(){
       +'<td class="ck"><input type="checkbox" data-sel="'+adEsc(u.email)+'"'+(on?' checked':'')+(me?' disabled':'')+' aria-label="'+adEsc(u.email)+' を選択"></td>'
       +'<td class="em">'+adEsc(u.email)+(me?'<span class="ad-you">ログイン中</span>':'')+'</td>'
       +'<td style="width:130px"><select data-role="'+i+'" aria-label="権限"'+(me&&last?' disabled':'')+'>'+adRoleOpts(u.role)+'</select></td>'
-      +'<td style="min-width:170px"><input type="text" data-memo="'+i+'" value="'+adEsc(u.memo)+'" placeholder="—"></td>'
+      +'<td style="min-width:150px"><input type="text" data-memo="'+i+'" value="'+adEsc(u.memo)+'" placeholder="—"></td>'
+      +'<td class="ad-last">'+(u.last?adEsc(u.last):'—')+'</td>'
       +'</tr>';
   }).join('');
 
@@ -1676,7 +1678,7 @@ function adRender(){
    +'<div class="ad-s">'+adUsers.length+'人（管理者 '+adAdminCount()+'人）'+(adSel.size?' · '+adSel.size+'人を選択中':'')+'</div></div>'
    +'<button class="ad-b dgr" id="ad-del" type="button"'+(adSel.size?'':' disabled')+'>選択を削除'+(adSel.size?'（'+adSel.size+'）':'')+'</button></div>'
    +'<div class="ad-tw"><table><thead><tr><th class="ck"><input type="checkbox" id="ad-all"'+(allOn?' checked':'')+' aria-label="すべて選択"></th>'
-   +'<th>メールアドレス</th><th>権限</th><th>メモ</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'
+   +'<th>メールアドレス</th><th>権限</th><th>メモ</th><th>最終ログイン</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'
 
    +'<div class="ad-card"><div class="ad-hd"><div><div class="ad-t">ユーザーを追加</div>'
    +'<div class="ad-s">申請を待たずに登録できます</div></div></div><div class="ad-bd">'
